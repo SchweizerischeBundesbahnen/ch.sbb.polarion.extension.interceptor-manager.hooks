@@ -9,38 +9,36 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=SchweizerischeBundesbahnen_open-source-polarion-java-repo-template&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=SchweizerischeBundesbahnen_open-source-polarion-java-repo-template)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=SchweizerischeBundesbahnen_open-source-polarion-java-repo-template&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=SchweizerischeBundesbahnen_open-source-polarion-java-repo-template)
 
-# Polarion ALM extension to <...>
+# Hooks for the ch.sbb.polarion.extension.interceptor-manager extension
 
-This Polarion extension provides possibility to <...>
+Hooks in this repository provide possibility to modify and enhance some ALM Polarion actions.
+
 ## Build
-
-This extension can be produced using maven:
-```bash
+Hooks can be produced using maven:
+```
 mvn clean package
 ```
 
-## Installation to Polarion
-
-To install the extension to Polarion `ch.sbb.polarion.extension.<extension_name>-<version>.jar`
-should be copied to `<polarion_home>/polarion/extensions/ch.sbb.polarion.extension.<extension_name>/eclipse/plugins`
+## Hooks installation
+Hooks jar files should be copied to `<polarion_home>/polarion/extensions/interceptor-manager/eclipse/plugins/hooks`
 It can be done manually or automated using maven build:
-```bash
-mvn clean install -P install-to-local-polarion
+```
+mvn clean install -Pinstall-to-local-polarion
 ```
 For automated installation with maven env variable `POLARION_HOME` should be defined and point to folder where Polarion is installed.
+Note: after hooks installation they can be discovered without restart of Polarion by using 'Reload hooks list' on the 'Settings' page of the Interceptor-manager.
 
-Changes only take effect after restart of Polarion.
+## Hooks list
+This repo contains 4 hooks, each of them should be supposed to be used in conjunction with Interceptor-manager v3.0.0+.
 
-## Polarion configuration
+### CheckSafetyHazardHook
+Enforces business rules for safety hazard workitems by automatically managing field values, ensuring proper risk documentation compliance before allowing workitems to be saved.
 
-<...>
+### DeleteDummyWorkitemsHook
+Prevents deletion of workitems based on specific conditions.
 
+### InconsistentTestCaseBlockHook
+Checks for consistency of Test Case Result and Test Step result(s).
 
-## Extension Configuration
-
-<...>
-
-
-## Usage
-
-<...>
+### LiveDocBlockEditHook
+Prevents document modification by enforcing specific business rules.
