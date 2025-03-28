@@ -1,0 +1,2 @@
+Name: Hook which prevents documents modification
+Main-Class: ch.sbb.polarion.extension.interceptor_manager.hooks.delete_dummy_workitems.DeleteDummyWorkitemsHook
