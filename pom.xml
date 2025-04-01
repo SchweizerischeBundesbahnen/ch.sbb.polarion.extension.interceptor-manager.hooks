@@ -2,18 +2,13 @@
 <project>
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>ch.sbb.polarion.extensions</groupId>
-        <artifactId>ch.sbb.polarion.extension.generic</artifactId>
-        <version>8.1.0</version>
-    </parent>
-
+    <groupId>ch.sbb.polarion.extensions</groupId>
     <artifactId>ch.sbb.polarion.extension.interceptor-manager.hooks</artifactId>
-    <version>0.0.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <version>3.2.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
 
-    <name>open-source-polarion-java-repo-template ... extension of Polarion ALM</name>
-    <description>This is a Polarion extension which provides ...</description>
+    <name>Hooks for Interceptor Manager extension for Polarion ALM</name>
+    <description>This is a repo for hooks for Interceptor Manager extension</description>
     <url>https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks</url>
 
     <licenses>
@@ -44,76 +39,335 @@
     </issueManagement>
 
     <properties>
-        <maven-jar-plugin.Extension-Context>interceptor-manager.hooks</maven-jar-plugin.Extension-Context>
-        <maven-jar-plugin.Automatic-Module-Name>ch.sbb.polarion.extension.interceptor_manager.hooks</maven-jar-plugin.Automatic-Module-Name>
+        <ch.sbb.polarion.extension.interceptor-manager.version>3.3.0</ch.sbb.polarion.extension.interceptor-manager.version>
+        <ch.sbb.polarion.extension.generic.app.version>8.0.0</ch.sbb.polarion.extension.generic.app.version>
 
-        <web.app.name>${maven-jar-plugin.Extension-Context}</web.app.name>
+        <interceptor-manager.artifactId>ch.sbb.polarion.extension.interceptor-manager</interceptor-manager.artifactId>
+        <hooks.folder.name>hooks</hooks.folder.name>
+
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <polarion.version>2404</polarion.version>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+
+        <!-- Maven plugins -->
+        <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
+        <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
+        <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
+        <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+        <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
+        <sonar-maven-plugin.version>5.0.0.4389</sonar-maven-plugin.version>
+
+        <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
+        <nexus-staging-maven-plugin.autoReleaseAfterClose>true</nexus-staging-maven-plugin.autoReleaseAfterClose>
+
+        <!-- Sonar and JaCoCo -->
+        <jacoco.version>0.8.12</jacoco.version>
+        <sonar.projectKey>SchweizerischeBundesbahnen_${project.artifactId}</sonar.projectKey>
+        <sonar.organization>schweizerischebundesbahnen</sonar.organization>
+        <sonar.projectName>${project.artifactId}</sonar.projectName>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        <sonar.language>java</sonar.language>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.verbose>true</sonar.verbose>
+        <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+
+        <!-- Test dependencies -->
+        <junit.version>5.11.4</junit.version>
+        <mockito.version>5.15.2</mockito.version>
+        <jackson.version>2.18.2</jackson.version>
+
+        <!-- Others -->
+        <google.guice.version>7.0.0</google.guice.version>
+        <jetbrains.api.version>24.0.1</jetbrains.api.version>
+
+        <!--suppress UnresolvedMavenProperty -->
+        <maven-jar-plugin.Hook-Version>${project.artifact.selectedVersion.majorVersion}.${project.artifact.selectedVersion.minorVersion}.${project.artifact.selectedVersion.incrementalVersion}</maven-jar-plugin.Hook-Version>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>install-to-local-polarion</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-clean-plugin</artifactId>
+                            <version>${maven-clean-plugin.version}</version>
+                            <configuration>
+                                <filesets>
+                                    <fileset>
+                                        <directory>${env.POLARION_HOME}/polarion/extensions/${interceptor-manager.artifactId}/eclipse/plugins/${hooks.folder.name}</directory>
+                                        <includes>
+                                            <include>*${project.artifactId}*.${project.packaging}</include>
+                                        </includes>
+                                        <followSymlinks>false</followSymlinks>
+                                    </fileset>
+                                </filesets>
+                            </configuration>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <version>${maven-dependency-plugin.version}</version>
+                            <executions>
+                                <execution>
+                                    <id>copy-to-local-polarion</id>
+                                    <phase>install</phase>
+                                    <goals>
+                                        <goal>copy</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>${project.groupId}</groupId>
+                                                <artifactId>${project.artifactId}</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>${project.packaging}</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${env.POLARION_HOME}/polarion/extensions/${interceptor-manager.artifactId}/eclipse/plugins/${hooks.folder.name}</outputDirectory>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
+            <id>gpg-sign</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>nexus-staging</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>
             <groupId>ch.sbb.polarion.extensions</groupId>
+            <artifactId>${interceptor-manager.artifactId}</artifactId>
+            <version>${ch.sbb.polarion.extension.interceptor-manager.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Polarion artifacts -->
+        <dependency>
+            <groupId>com.polarion.alm.projects</groupId>
+            <artifactId>projects</artifactId>
+            <version>${polarion.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.polarion.alm.tracker</groupId>
+            <artifactId>tracker</artifactId>
+            <version>${polarion.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.polarion.platform</groupId>
+            <artifactId>platform</artifactId>
+            <version>${polarion.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.polarion.platform.persistence</groupId>
+            <artifactId>platform-persistence</artifactId>
+            <version>${polarion.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.polarion.core.util</groupId>
+            <artifactId>util</artifactId>
+            <version>${polarion.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.polarion.subterra.base</groupId>
+            <artifactId>subterra-base-core</artifactId>
+            <version>${polarion.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.polarion.subterra.base</groupId>
+            <artifactId>subterra-base-data</artifactId>
+            <version>${polarion.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.polarion.platform.repository</groupId>
+            <artifactId>platform-repository</artifactId>
+            <version>${polarion.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>ch.sbb.polarion.extensions</groupId>
             <artifactId>ch.sbb.polarion.extension.generic.app</artifactId>
-            <version>${project.parent.version}</version>
+            <version>${ch.sbb.polarion.extension.generic.app.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Others -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>${google.guice.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>${jetbrains.api.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
+
+    <modules>
+        <module>check-safety-hazard</module>
+        <module>delete-dummy-workitems</module>
+        <module>inconsistent-test-case-block</module>
+        <module>live-doc-block-edit</module>
+    </modules>
 
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>ch.sbb.maven.plugins</groupId>
-                <artifactId>markdown2html-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven-clean-plugin.version}</version>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-jar-plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <manifestFile>src/main/resources/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestEntries>
+                            <Hook-Version>${maven-jar-plugin.Hook-Version}</Hook-Version>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
             </plugin>
 
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>**/*.jar</excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <formats>
+                                <format>XML</format>
+                            </formats>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar-maven-plugin.version}</version>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven-javadoc-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <outputFormat>JSON</outputFormat>
-                    <resourcePackages>
-                        <package>ch.sbb.polarion.extension.generic.rest.controller.info</package>
-<!--                        <package>ch.sbb.polarion.extension.generic.rest.controller.settings</package>-->
-                        <package>ch.sbb.polarion.extension.generic.rest.model</package>
-                        <package>ch.sbb.polarion.extension.interceptor_manager.hooks.rest.controller</package>
-<!--                        <package>ch.sbb.polarion.extension.extension_name.rest.model</package>-->
-                    </resourcePackages>
+                    <sourcepath>${basedir}/src/main/java</sourcepath>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
 </project>
