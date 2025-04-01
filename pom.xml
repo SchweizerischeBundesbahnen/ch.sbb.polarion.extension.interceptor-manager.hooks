@@ -79,7 +79,7 @@
         <!-- Test dependencies -->
         <junit.version>5.11.4</junit.version>
         <mockito.version>5.15.2</mockito.version>
-        <jackson.version>2.18.2</jackson.version>
+        <jackson.version>2.18.3</jackson.version>
 
         <!-- Others -->
         <google.guice.version>7.0.0</google.guice.version>
