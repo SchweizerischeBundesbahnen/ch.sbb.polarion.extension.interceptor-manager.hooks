@@ -64,6 +64,8 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     private static final String LINK_TYPE_PARENT = "parent";
     private static final String WI_TYPE_HEADING = "heading";
 
+    private static final String STATUS_DRAFT = "draft";
+
     public static final String SETTINGS_DOCUMENT_DRAFT_STATUS_IDS_DESCRIPTION = "Comma-separated list of document status IDs which will be treated as 'Draft'";
     public static final String SETTINGS_DOCUMENT_DRAFT_STATUS_IDS = "docDraftStatusIds";
 
@@ -258,11 +260,13 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     }
 
     private boolean isDocumentNotInDraftStatus(@Nullable String documentStatus) {
-        return !isCommaSeparatedSettingsHasItem(documentStatus, SETTINGS_DOCUMENT_DRAFT_STATUS_IDS);
+        return StringUtils.isEmpty(getSettingsValue(SETTINGS_DOCUMENT_DRAFT_STATUS_IDS)) ? !STATUS_DRAFT.equals(documentStatus) :
+                !isCommaSeparatedSettingsHasItem(documentStatus, SETTINGS_DOCUMENT_DRAFT_STATUS_IDS);
     }
 
     private boolean isWorkItemNotInDraftStatus(@Nullable String workItemStatus) {
-        return !isCommaSeparatedSettingsHasItem(workItemStatus, SETTINGS_WORKITEM_DRAFT_STATUS_IDS);
+        return StringUtils.isEmpty(getSettingsValue(SETTINGS_WORKITEM_DRAFT_STATUS_IDS)) ? !STATUS_DRAFT.equals(workItemStatus) :
+                !isCommaSeparatedSettingsHasItem(workItemStatus, SETTINGS_WORKITEM_DRAFT_STATUS_IDS);
     }
 
     @Override
@@ -277,9 +281,9 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
                 System.lineSeparator() +
                 PropertiesUtils.buildWithDescription(
                         SETTINGS_DOCUMENT_DRAFT_STATUS_IDS_DESCRIPTION,
-                        SETTINGS_DOCUMENT_DRAFT_STATUS_IDS, "draft",
+                        SETTINGS_DOCUMENT_DRAFT_STATUS_IDS, STATUS_DRAFT,
                         SETTINGS_WORKITEM_DRAFT_STATUS_IDS_DESCRIPTION,
-                        SETTINGS_WORKITEM_DRAFT_STATUS_IDS, "draft") +
+                        SETTINGS_WORKITEM_DRAFT_STATUS_IDS, STATUS_DRAFT) +
                 System.lineSeparator() +
                 PropertiesUtils.build(
                         SETTINGS_ERROR_STATUS_MSG, "Cannot delete workitem '%s' in '%s'. The document '%s' is in status '%s'.".formatted(PLACEHOLDER_WORK_ITEM_ID, PLACEHOLDER_PROJECT_LOCATION, PLACEHOLDER_DOCUMENT_NAME, PLACEHOLDER_DOCUMENT_STATUS),
