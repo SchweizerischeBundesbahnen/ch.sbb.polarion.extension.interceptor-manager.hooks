@@ -130,7 +130,7 @@ class CheckSafetyHazardHookTest {
             }
         });
 
-        when(workItem.getEnumerationOptionForField(eq("riskAcceptance"), eq("yes"))).thenReturn(yesEnum);
+        when(workItem.getEnumerationOptionForField("riskAcceptance", "yes")).thenReturn(yesEnum);
 
         CheckSafetyHazardHook checkSafetyHazardHook = constructHook();
         String errorMessage = checkSafetyHazardHook.getExecutor().preAction(workItem);

@@ -27,7 +27,7 @@ import java.util.Optional;
 /**
  * Hook which prevents documents deletion under some circumstances
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "java:S2160"}) // ignore missing 'equals()' - it is made by design
 public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor {
 
     public static final String DESCRIPTION = "User can NOT delete workitems IF:<br>" +
@@ -97,46 +97,71 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
         String projectLocation = project.getLocation().getLocationPath();
 
         try {
-            // validate document status: deletion of workitems is allowed only when document has "Draft" statuses
-            if (module != null) {
-                @Nullable IStatusOpt moduleStatus = module.getStatus();
-                if (moduleStatus != null && isDocumentNotInDraftStatus(moduleStatus.getId())) {
-                    return createErrorMessage(getSettingsValue(SETTINGS_ERROR_STATUS_MSG), workItemId, projectLocation, null, moduleStatus.getName(), module.getModuleName());
-                }
-            }
+            validateModuleStatus(module, workItemId, projectLocation);
 
-            // validate all linked document statuses: deletion of workitems is allowed only when all linking documents have "Draft" statuses
-            for (Object externalModule : workItem.getExternalLinkingModules()) {
-                if (externalModule instanceof IModule externalLinkingModule) {
-                    @Nullable IStatusOpt externalLinkingModuleStatus = externalLinkingModule.getStatus();
-                    if (externalLinkingModuleStatus != null && isDocumentNotInDraftStatus(externalLinkingModuleStatus.getId())) {
-                        return createErrorMessage(getSettingsValue(SETTINGS_ERROR_REFERRING_DOC_STATUS_MSG), workItemId, projectLocation, null, externalLinkingModuleStatus.getName(), externalLinkingModule.getModuleName());
-                    }
-                }
-            }
+            validateLinkedDocumentStatuses(workItem, workItemId, projectLocation);
 
             @Nullable String workItemTypeId = Optional.ofNullable(workItem.getType()).map(IEnumOption::getId).orElse(null);  // DEV-9155
             @Nullable String currentWorkItemStatusId = Optional.ofNullable(workItem.getStatus()).map(IEnumOption::getId).orElse(null);
             @NotNull List<String> workItemIncomingLinks = getWorkItemIncomingLinks(workItem.getLinkedWorkItemsBack());
-            boolean workItemInDraftStatus = isWorkItemInDraftStatus(currentWorkItemStatusId);
 
             if (isWorkItemTypeHeading(workItemTypeId)) {
-                // validate workitems heading type: workitem should be in "Draft" status and no incoming links (apart from links of other headings or has only parent links)
-                List<String> nonParentWorkItemIncomingLinks = getNonParentWorkItemIncomingLinks(workItemIncomingLinks);
-                if (!workItemInDraftStatus || !nonParentWorkItemIncomingLinks.isEmpty()) {
-                    return createErrorMessage(getSettingsValue(SETTINGS_ERROR_HEADING_TYPE_LINKED_MSG), workItemId, projectLocation, currentWorkItemStatusId, null, null);
-                }
+                validateHeadingWorkItem(currentWorkItemStatusId, workItemIncomingLinks, workItemId, projectLocation);
             } else {
-                // validate workitems heading type: workitem should be in "Draft" status + it was never in any other status + there is no incoming links
-                boolean hasChangedStatus = hasChangedStatus(workItem, currentWorkItemStatusId);
-                if (!workItemInDraftStatus || hasChangedStatus || !workItemIncomingLinks.isEmpty()) {
-                    return createErrorMessage(getSettingsValue(SETTINGS_ERROR_LINKED_MSG), workItemId, projectLocation, currentWorkItemStatusId, null, null);
-                }
+                validateNonHeadingWorkItem(workItem, currentWorkItemStatusId, workItemIncomingLinks, workItemId, projectLocation);
             }
+        } catch (ValidationError validationError) {
+            return validationError.getMessage();
         } catch (Exception e) {
             logger.error("Error during hook processing", e);
         }
         return null;
+    }
+
+    /**
+     * Deletion of workitems is allowed only when document has "Draft" status
+     */
+    private void validateModuleStatus(@Nullable IModule module, @NotNull String workItemId, String projectLocation) throws ValidationError {
+        if (module != null) {
+            @Nullable IStatusOpt moduleStatus = module.getStatus();
+            if (moduleStatus != null && isDocumentNotInDraftStatus(moduleStatus.getId())) {
+                throw new ValidationError(getSettingsValue(SETTINGS_ERROR_STATUS_MSG), workItemId, projectLocation, null, moduleStatus.getName(), module.getModuleName());
+            }
+        }
+    }
+
+    /**
+     * Deletion of workitems is allowed only when all linking documents have "Draft" statuses
+     */
+    private void validateLinkedDocumentStatuses(@NotNull IWorkItem workItem, String workItemId, String projectLocation) throws ValidationError {
+        for (Object externalModule : workItem.getExternalLinkingModules()) {
+            if (externalModule instanceof IModule externalLinkingModule) {
+                @Nullable IStatusOpt externalLinkingModuleStatus = externalLinkingModule.getStatus();
+                if (externalLinkingModuleStatus != null && isDocumentNotInDraftStatus(externalLinkingModuleStatus.getId())) {
+                    throw new ValidationError(getSettingsValue(SETTINGS_ERROR_REFERRING_DOC_STATUS_MSG), workItemId, projectLocation, null, externalLinkingModuleStatus.getName(), externalLinkingModule.getModuleName());
+                }
+            }
+        }
+    }
+
+    /**
+     * Workitem should be in "Draft" status and no incoming links (apart from links of other headings or has only parent links)
+     */
+    private void validateHeadingWorkItem(@Nullable String currentWorkItemStatusId, @NotNull List<String> workItemIncomingLinks, @NotNull String workItemId, String projectLocation) throws ValidationError {
+        List<String> nonParentWorkItemIncomingLinks = getNonParentWorkItemIncomingLinks(workItemIncomingLinks);
+        if (isWorkItemNotInDraftStatus(currentWorkItemStatusId) || !nonParentWorkItemIncomingLinks.isEmpty()) {
+            throw new ValidationError(getSettingsValue(SETTINGS_ERROR_HEADING_TYPE_LINKED_MSG), workItemId, projectLocation, currentWorkItemStatusId, null, null);
+        }
+    }
+
+    /**
+     * Workitem should be in "Draft" status + it was never in any other status + there is no incoming links
+     */
+    private void validateNonHeadingWorkItem(@NotNull IWorkItem workItem, @Nullable String currentWorkItemStatusId, @NotNull List<String> workItemIncomingLinks, @NotNull String workItemId, String projectLocation) throws ValidationError {
+        boolean hasChangedStatus = hasChangedStatus(workItem, currentWorkItemStatusId);
+        if (isWorkItemNotInDraftStatus(currentWorkItemStatusId) || hasChangedStatus || !workItemIncomingLinks.isEmpty()) {
+            throw new ValidationError(getSettingsValue(SETTINGS_ERROR_LINKED_MSG), workItemId, projectLocation, currentWorkItemStatusId, null, null);
+        }
     }
 
     @Override
@@ -232,21 +257,12 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
         return incomingLinkIds;
     }
 
-    private String createErrorMessage(@NotNull String text, @NotNull String workItemId, @NotNull String projectLocation, @Nullable String workItemStatus, @Nullable String documentStatus, @Nullable String documentName) {
-        return text
-                .replace(PLACEHOLDER_WORK_ITEM_ID, workItemId)
-                .replace(PLACEHOLDER_PROJECT_LOCATION, projectLocation)
-                .replace(PLACEHOLDER_WORK_ITEM_STATUS, StringUtils.getEmptyIfNull(workItemStatus))
-                .replace(PLACEHOLDER_DOCUMENT_STATUS, StringUtils.getEmptyIfNull(documentStatus))
-                .replace(PLACEHOLDER_DOCUMENT_NAME, StringUtils.getEmptyIfNull(documentName));
-    }
-
     private boolean isDocumentNotInDraftStatus(@Nullable String documentStatus) {
         return !isCommaSeparatedSettingsHasItem(documentStatus, SETTINGS_DOCUMENT_DRAFT_STATUS_IDS);
     }
 
-    private boolean isWorkItemInDraftStatus(@Nullable String workItemStatus) {
-        return isCommaSeparatedSettingsHasItem(workItemStatus, SETTINGS_WORKITEM_DRAFT_STATUS_IDS);
+    private boolean isWorkItemNotInDraftStatus(@Nullable String workItemStatus) {
+        return !isCommaSeparatedSettingsHasItem(workItemStatus, SETTINGS_WORKITEM_DRAFT_STATUS_IDS);
     }
 
     @Override
@@ -271,5 +287,16 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
                         SETTINGS_ERROR_LINKED_MSG, "Cannot delete workitem '%s' in '%s'. You can delete workitem only: (a) if it is in Status Draft and never was in any other Status; (b) if it has no incoming links.".formatted(PLACEHOLDER_WORK_ITEM_ID, PLACEHOLDER_PROJECT_LOCATION),
                         SETTINGS_ERROR_HEADING_TYPE_LINKED_MSG, "Cannot delete workitem of type heading '%s' in '%s'. You can delete workitem heading only: (a) if it is in Status Draft. (b) if it has no incoming links (apart from links of other headings or has only parent links).".formatted(PLACEHOLDER_WORK_ITEM_ID, PLACEHOLDER_PROJECT_LOCATION)
                 );
+    }
+
+    public static class ValidationError extends Exception {
+        public ValidationError(@NotNull String text, @NotNull String workItemId, @NotNull String projectLocation, @Nullable String workItemStatus, @Nullable String documentStatus, @Nullable String documentName) {
+            super(text
+                    .replace(PLACEHOLDER_WORK_ITEM_ID, workItemId)
+                    .replace(PLACEHOLDER_PROJECT_LOCATION, projectLocation)
+                    .replace(PLACEHOLDER_WORK_ITEM_STATUS, StringUtils.getEmptyIfNull(workItemStatus))
+                    .replace(PLACEHOLDER_DOCUMENT_STATUS, StringUtils.getEmptyIfNull(documentStatus))
+                    .replace(PLACEHOLDER_DOCUMENT_NAME, StringUtils.getEmptyIfNull(documentName)));
+        }
     }
 }

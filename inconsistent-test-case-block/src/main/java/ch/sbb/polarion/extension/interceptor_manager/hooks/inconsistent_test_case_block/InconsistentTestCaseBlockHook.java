@@ -34,7 +34,7 @@ public class InconsistentTestCaseBlockHook extends ActionHook implements HookExe
     public static final String SETTINGS_PROHIBITED_RESULTS = "prohibitedResultIDs";
 
     private static final String PASSED_RESULT_ID = "passed";
-    private static final IEnumOption RESULT_SKIPPED =  new EnumOption("result", "skipped", "Skipped", 0, false);;
+    private static final IEnumOption RESULT_SKIPPED =  new EnumOption("result", "skipped", "Skipped", 0, false);
 
     public InconsistentTestCaseBlockHook() {
         super(ItemType.TESTRUN, ActionType.SAVE, DESCRIPTION);
@@ -44,23 +44,21 @@ public class InconsistentTestCaseBlockHook extends ActionHook implements HookExe
     public String preAction(@NotNull IPObject object) {
         ITestRun testRun = (ITestRun) object;
 
-        if (!applicable(testRun)) {
+        if (!applicable(testRun) || testRun.isUnresolvable() || testRun.isTemplate()) {
             return null;
         }
 
-        if (!testRun.isUnresolvable() && !testRun.isTemplate()) {
-            for (ITestRecord testRecord : testRun.getAllRecords()) {
-                if (PASSED_RESULT_ID.equals(testRecord.getResult().getId())) {
-                    List<ITestStepResult> steps = testRecord.getTestStepResults();
-                    for (int i = 0; i < steps.size(); i++) {
-                        IEnumOption result = getStepResult(steps.get(i));
-                        if (prohibitedResult(result, testRun.getProjectId())) {
-                            return preprocess(getSettingsValue(SETTINGS_ERROR_MSG), testRecord.getTestCase().getId(), String.valueOf(i + 1), result);
-                        }
-                    }
+        List<ITestRecord> passedRecords = testRun.getAllRecords().stream().filter(record -> PASSED_RESULT_ID.equals(record.getResult().getId())).toList();
+        for (ITestRecord record : passedRecords) {
+            List<ITestStepResult> steps = record.getTestStepResults();
+            for (int i = 0; i < steps.size(); i++) {
+                IEnumOption result = getStepResult(steps.get(i));
+                if (prohibitedResult(result, testRun.getProjectId())) {
+                    return preprocess(getSettingsValue(SETTINGS_ERROR_MSG), record.getTestCase().getId(), String.valueOf(i + 1), result);
                 }
             }
         }
+
         return null;
     }
 
