@@ -48,13 +48,13 @@ public class InconsistentTestCaseBlockHook extends ActionHook implements HookExe
             return null;
         }
 
-        List<ITestRecord> passedRecords = testRun.getAllRecords().stream().filter(record -> PASSED_RESULT_ID.equals(record.getResult().getId())).toList();
-        for (ITestRecord record : passedRecords) {
-            List<ITestStepResult> steps = record.getTestStepResults();
+        List<ITestRecord> passedRecords = testRun.getAllRecords().stream().filter(r -> PASSED_RESULT_ID.equals(r.getResult().getId())).toList();
+        for (ITestRecord testRecord : passedRecords) {
+            List<ITestStepResult> steps = testRecord.getTestStepResults();
             for (int i = 0; i < steps.size(); i++) {
                 IEnumOption result = getStepResult(steps.get(i));
                 if (prohibitedResult(result, testRun.getProjectId())) {
-                    return preprocess(getSettingsValue(SETTINGS_ERROR_MSG), record.getTestCase().getId(), String.valueOf(i + 1), result);
+                    return preprocess(getSettingsValue(SETTINGS_ERROR_MSG), testRecord.getTestCase().getId(), String.valueOf(i + 1), result);
                 }
             }
         }

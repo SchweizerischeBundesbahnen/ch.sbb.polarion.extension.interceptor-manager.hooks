@@ -101,7 +101,7 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
 
             validateLinkedDocumentStatuses(workItem, workItemId, projectLocation);
 
-            @Nullable String workItemTypeId = Optional.ofNullable(workItem.getType()).map(IEnumOption::getId).orElse(null);  // DEV-9155
+            @Nullable String workItemTypeId = Optional.ofNullable(workItem.getType()).map(IEnumOption::getId).orElse(null);
             @Nullable String currentWorkItemStatusId = Optional.ofNullable(workItem.getStatus()).map(IEnumOption::getId).orElse(null);
             @NotNull List<String> workItemIncomingLinks = getWorkItemIncomingLinks(workItem.getLinkedWorkItemsBack());
 
