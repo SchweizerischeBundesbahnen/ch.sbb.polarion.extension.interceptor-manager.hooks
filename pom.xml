@@ -77,7 +77,7 @@
         <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
 
         <!-- Test dependencies -->
-        <junit.version>5.11.4</junit.version>
+        <junit.version>5.12.1</junit.version>
         <mockito.version>5.15.2</mockito.version>
         <jackson.version>2.18.3</jackson.version>
 
