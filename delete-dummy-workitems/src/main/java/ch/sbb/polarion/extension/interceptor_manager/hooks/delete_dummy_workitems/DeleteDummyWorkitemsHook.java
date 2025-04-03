@@ -46,6 +46,11 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
             "      <li>there are incoming links for the current workitem (apart from links of other headings or has only parent links)</li>" +
             "      <li>workitem is not in 'Draft' status</li>" +
             "    </ul>" +
+            "  </li>" +
+            "</ul>" +
+            "Upgrading to <b>v3.2.0</b>:" +
+            "<ul>" +
+            "  <li>introduced two new properties: <b>docDraftStatusIds</b> and <b>workItemDraftStatusIds</b> - use them in case you have custom statuses IDs which must be treated as 'Draft'</li>"+
             "</ul>";
 
     public static final String SETTINGS_PROJECTS_DESCRIPTION = "Comma-separated list of projects. Use * to process all.";
