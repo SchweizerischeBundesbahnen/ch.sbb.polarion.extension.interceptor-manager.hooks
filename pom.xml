@@ -58,7 +58,7 @@
         <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
         <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
         <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
-        <sonar-maven-plugin.version>5.0.0.4389</sonar-maven-plugin.version>
+        <sonar-maven-plugin.version>5.1.0.4751</sonar-maven-plugin.version>
 
         <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
         <nexus-staging-maven-plugin.autoReleaseAfterClose>true</nexus-staging-maven-plugin.autoReleaseAfterClose>
