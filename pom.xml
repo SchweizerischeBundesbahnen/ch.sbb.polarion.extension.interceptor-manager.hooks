@@ -38,6 +38,17 @@
         <url>https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues</url>
     </issueManagement>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <properties>
         <ch.sbb.polarion.extension.interceptor-manager.version>3.3.0</ch.sbb.polarion.extension.interceptor-manager.version>
         <ch.sbb.polarion.extension.generic.app.version>8.1.0</ch.sbb.polarion.extension.generic.app.version>
