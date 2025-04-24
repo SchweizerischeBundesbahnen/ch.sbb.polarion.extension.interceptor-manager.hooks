@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Hook which prevents documents deletion under some circumstances
@@ -50,7 +51,7 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
             "</ul>" +
             "Upgrading to <b>v3.2.0</b>:" +
             "<ul>" +
-            "  <li>introduced two new properties: <b>docDraftStatusIds</b> and <b>workItemDraftStatusIds</b> - use them in case you have custom statuses IDs which must be treated as 'Draft'</li>"+
+            "  <li>introduced two new properties: <b>docDraftStatusIds</b> and <b>workItemDraftStatusIds</b> - use them in case you have custom statuses IDs which must be treated as 'Draft'</li>" +
             "</ul>";
 
     public static final String SETTINGS_PROJECTS_DESCRIPTION = "Comma-separated list of projects. Use * to process all.";
@@ -60,6 +61,9 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
 
     public static final String SETTINGS_TYPES_DESCRIPTION = "Comma-separated list of workitem types for particular project (e.g.: types.projectId1=task,defect). Use * to wildcard all projects or types (e.g. types.*=*).";
     public static final String SETTINGS_TYPES = "types";
+
+    public static final String SETTINGS_EXCLUDED_TYPES_DESCRIPTION = "Comma-separated list of workitem types to exclude across all or specific projects (e.g.: types.projectId1=task,defect).";
+    public static final String SETTINGS_EXCLUDED_TYPES = "excludedTypes";
 
     public static final String SETTINGS_ERROR_STATUS_MSG = "errorStatusMessage";
     public static final String SETTINGS_ERROR_REFERRING_DOC_STATUS_MSG = "errorReferringDocStatusMessage";
@@ -203,6 +207,9 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
         }
 
         String workItemTypeId = workItem.getType().getId();
+        if (isCommaSeparatedSettingsHasItem(workItemTypeId, SETTINGS_EXCLUDED_TYPES, workItem.getProjectId())) {
+            return false;
+        }
         return isCommaSeparatedSettingsHasItem(workItemTypeId, SETTINGS_TYPES, workItem.getProjectId());
     }
 
@@ -275,6 +282,14 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     }
 
     @Override
+    protected boolean isCommaSeparatedSettingsHasItem(String itemToCheck, @NotNull String settingsId, String... selectors) {
+        String itemsString = this.getSettingsValue(settingsId, selectors);
+        return ("*".equals(itemsString) && !SETTINGS_EXCLUDED_TYPES.equals(settingsId)) || Stream.of(itemsString.split(",")).map(String::trim).anyMatch((s) -> {
+            return Objects.equals(s, itemToCheck);
+        });
+    }
+
+    @Override
     public String getDefaultSettings() {
         return PropertiesUtils.buildWithDescription(
                 SETTINGS_PROJECT_GROUPS_DESCRIPTION,
@@ -282,7 +297,9 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
                 SETTINGS_PROJECTS_DESCRIPTION,
                 SETTINGS_PROJECTS, ALL_WILDCARD,
                 SETTINGS_TYPES_DESCRIPTION,
-                SETTINGS_TYPES + DOT + ALL_WILDCARD, ALL_WILDCARD) +
+                SETTINGS_TYPES + DOT + ALL_WILDCARD, ALL_WILDCARD,
+                SETTINGS_EXCLUDED_TYPES_DESCRIPTION,
+                SETTINGS_EXCLUDED_TYPES + DOT + ALL_WILDCARD, "") +
                 System.lineSeparator() +
                 PropertiesUtils.buildWithDescription(
                         SETTINGS_DOCUMENT_DRAFT_STATUS_IDS_DESCRIPTION,
