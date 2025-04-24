@@ -284,9 +284,10 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     @Override
     protected boolean isCommaSeparatedSettingsHasItem(String itemToCheck, @NotNull String settingsId, String... selectors) {
         String itemsString = this.getSettingsValue(settingsId, selectors);
-        return ("*".equals(itemsString) && !SETTINGS_EXCLUDED_TYPES.equals(settingsId)) || Stream.of(itemsString.split(",")).map(String::trim).anyMatch(s -> {
-            return Objects.equals(s, itemToCheck);
-        });
+        return ("*".equals(itemsString) && !SETTINGS_EXCLUDED_TYPES.equals(settingsId)) ||
+                Stream.of(itemsString.split(","))
+                        .map(String::trim)
+                        .anyMatch(s -> Objects.equals(s, itemToCheck));
     }
 
     @Override
