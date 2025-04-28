@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v3.2.0...v3.3.0) (2025-04-25)
+
+
+### Features
+
+* add negative list for work item types ([#27](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/27)) ([3614dac](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/3614dacd6d5e423783a1179b3abe64c6e0a297f5)), closes [#25](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/25)
+
 ## 3.2.0 (2025-04-09)
 
 
