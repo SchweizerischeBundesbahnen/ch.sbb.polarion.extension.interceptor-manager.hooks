@@ -182,4 +182,4 @@ jobs:
           RELEASE_VERSION: ${{ needs.build.outputs.project_version }}
         if: ${{ !endsWith(env.RELEASE_VERSION, '-SNAPSHOT') }}
         run: |-
-          gh release upload "v${RELEASE_VERSION}" "target/*-${RELEASE_VERSION}.jar" --clobber
+          gh release upload "v${RELEASE_VERSION}" **/target/**/*-${RELEASE_VERSION}.jar --clobber
