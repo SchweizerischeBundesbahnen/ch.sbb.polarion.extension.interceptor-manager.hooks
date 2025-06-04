@@ -51,7 +51,7 @@
 
     <properties>
         <ch.sbb.polarion.extension.interceptor-manager.version>4.0.0</ch.sbb.polarion.extension.interceptor-manager.version>
-        <ch.sbb.polarion.extension.generic.app.version>10.0.0</ch.sbb.polarion.extension.generic.app.version>
+        <ch.sbb.polarion.extension.generic.app.version>10.1.0</ch.sbb.polarion.extension.generic.app.version>
 
         <interceptor-manager.artifactId>ch.sbb.polarion.extension.interceptor-manager</interceptor-manager.artifactId>
         <hooks.folder.name>hooks</hooks.folder.name>
