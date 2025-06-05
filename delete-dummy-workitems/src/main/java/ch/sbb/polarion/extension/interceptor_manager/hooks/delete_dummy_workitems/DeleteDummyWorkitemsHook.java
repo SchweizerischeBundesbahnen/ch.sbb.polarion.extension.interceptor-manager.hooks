@@ -5,7 +5,6 @@ import ch.sbb.polarion.extension.interceptor_manager.model.HookExecutor;
 import ch.sbb.polarion.extension.interceptor_manager.util.PropertiesUtils;
 import com.polarion.alm.projects.model.IProjectGroup;
 import com.polarion.alm.tracker.ITrackerService;
-import com.polarion.alm.tracker.model.ILinkedWorkItemStruct;
 import com.polarion.alm.tracker.model.IModule;
 import com.polarion.alm.tracker.model.IStatusOpt;
 import com.polarion.alm.tracker.model.ITrackerProject;
@@ -20,9 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -114,12 +115,12 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
 
             @Nullable String workItemTypeId = Optional.ofNullable(workItem.getType()).map(IEnumOption::getId).orElse(null);
             @Nullable String currentWorkItemStatusId = Optional.ofNullable(workItem.getStatus()).map(IEnumOption::getId).orElse(null);
-            @NotNull List<String> workItemIncomingLinks = getWorkItemIncomingLinks(workItem.getLinkedWorkItemsBack());
+            @NotNull Set<String> workItemIncomingLinkRoles = getWorkItemIncomingLinkRoles(workItem.getLinkedWorkItemsBack(), workItemId);
 
             if (isWorkItemTypeHeading(workItemTypeId)) {
-                validateHeadingWorkItem(currentWorkItemStatusId, workItemIncomingLinks, workItemId, projectLocation);
+                validateHeadingWorkItem(currentWorkItemStatusId, workItemIncomingLinkRoles, workItemId, projectLocation);
             } else {
-                validateNonHeadingWorkItem(workItem, currentWorkItemStatusId, workItemIncomingLinks, workItemId, projectLocation);
+                validateNonHeadingWorkItem(workItem, currentWorkItemStatusId, workItemIncomingLinkRoles, workItemId, projectLocation);
             }
         } catch (ValidationError validationError) {
             return validationError.getMessage();
@@ -158,9 +159,8 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     /**
      * Workitem should be in "Draft" status and no incoming links (apart from links of other headings or has only parent links)
      */
-    private void validateHeadingWorkItem(@Nullable String currentWorkItemStatusId, @NotNull List<String> workItemIncomingLinks, @NotNull String workItemId, String projectLocation) throws ValidationError {
-        List<String> nonParentWorkItemIncomingLinks = getNonParentWorkItemIncomingLinks(workItemIncomingLinks);
-        if (isWorkItemNotInDraftStatus(currentWorkItemStatusId) || !nonParentWorkItemIncomingLinks.isEmpty()) {
+    private void validateHeadingWorkItem(@Nullable String currentWorkItemStatusId, @NotNull Set<String> workItemIncomingLinkRoles, @NotNull String workItemId, String projectLocation) throws ValidationError {
+        if (isWorkItemNotInDraftStatus(currentWorkItemStatusId) || containsNonParentLinkRoles(workItemIncomingLinkRoles)) {
             throw new ValidationError(getSettingsValue(SETTINGS_ERROR_HEADING_TYPE_LINKED_MSG), workItemId, projectLocation, currentWorkItemStatusId, null, null);
         }
     }
@@ -168,9 +168,9 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     /**
      * Workitem should be in "Draft" status + it was never in any other status + there is no incoming links
      */
-    private void validateNonHeadingWorkItem(@NotNull IWorkItem workItem, @Nullable String currentWorkItemStatusId, @NotNull List<String> workItemIncomingLinks, @NotNull String workItemId, String projectLocation) throws ValidationError {
+    private void validateNonHeadingWorkItem(@NotNull IWorkItem workItem, @Nullable String currentWorkItemStatusId, @NotNull Set<String> workItemIncomingLinkRoles, @NotNull String workItemId, String projectLocation) throws ValidationError {
         boolean hasChangedStatus = hasChangedStatus(workItem, currentWorkItemStatusId);
-        if (isWorkItemNotInDraftStatus(currentWorkItemStatusId) || hasChangedStatus || !workItemIncomingLinks.isEmpty()) {
+        if (isWorkItemNotInDraftStatus(currentWorkItemStatusId) || hasChangedStatus || !workItemIncomingLinkRoles.isEmpty()) {
             throw new ValidationError(getSettingsValue(SETTINGS_ERROR_LINKED_MSG), workItemId, projectLocation, currentWorkItemStatusId, null, null);
         }
     }
@@ -191,10 +191,8 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
         return findWorkItemTypeInConfiguredTypes(workItem);
     }
 
-    private @NotNull List<String> getNonParentWorkItemIncomingLinks(@NotNull List<String> workItemIncomingLinks) {
-        return workItemIncomingLinks.stream()
-                .filter(value -> !value.equals(LINK_TYPE_PARENT))
-                .toList();
+    private boolean containsNonParentLinkRoles(@NotNull Set<String> workItemIncomingLinks) {
+        return workItemIncomingLinks.stream().anyMatch(value -> !value.equals(LINK_TYPE_PARENT));
     }
 
     private boolean isWorkItemTypeHeading(@Nullable String workItemTypeId) {
@@ -259,16 +257,14 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
         return false;
     }
 
-    private @NotNull List<String> getWorkItemIncomingLinks(@NotNull IPObjectList<IWorkItem> backLinkedWorkItems) {
-        List<String> incomingLinkIds = new ArrayList<>();
-
+    private @NotNull Set<String> getWorkItemIncomingLinkRoles(@NotNull IPObjectList<IWorkItem> backLinkedWorkItems, @NotNull String currentWorkItemId) {
+        Set<String> incomingLinkRoleIds = new HashSet<>();
         for (IWorkItem backLinkedWorkItem : backLinkedWorkItems) {
-            for (ILinkedWorkItemStruct linkedWorkItemStruct : backLinkedWorkItem.getLinkedWorkItemsStructsDirect()) {
-                incomingLinkIds.add(linkedWorkItemStruct.getLinkRole().getId());
-            }
+            backLinkedWorkItem.getLinkedWorkItemsStructsDirect().stream()
+                    .filter(s -> s.getLinkedItem().getId().equals(currentWorkItemId))
+                    .forEach(linkedWorkItemStruct -> incomingLinkRoleIds.add(linkedWorkItemStruct.getLinkRole().getId()));
         }
-
-        return incomingLinkIds;
+        return incomingLinkRoleIds;
     }
 
     private boolean isDocumentNotInDraftStatus(@Nullable String documentStatus) {

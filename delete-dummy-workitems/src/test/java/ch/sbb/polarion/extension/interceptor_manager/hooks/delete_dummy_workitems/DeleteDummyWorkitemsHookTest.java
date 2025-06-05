@@ -5,6 +5,7 @@ import ch.sbb.polarion.extension.interceptor_manager.settings.HookModel;
 import ch.sbb.polarion.extension.interceptor_manager.util.HookManifestUtils;
 import com.polarion.alm.projects.model.IProjectGroup;
 import com.polarion.alm.tracker.ITrackerService;
+import com.polarion.alm.tracker.model.ILinkedWorkItemStruct;
 import com.polarion.alm.tracker.model.IModule;
 import com.polarion.alm.tracker.model.IStatusOpt;
 import com.polarion.alm.tracker.model.ITrackerProject;
@@ -118,7 +119,33 @@ class DeleteDummyWorkitemsHookTest {
                 "(apart from links of other headings or has only parent links).", deleteDummyWorkitemsHook.getExecutor().preAction(workItem));
 
         when(workItemStatus.getId()).thenReturn("draft");
+
+        // there is backlink but ut has 'parent' role - we allow deletion in this case
+        IWorkItem backLinkWorkItem = mock(IWorkItem.class);
+        ILinkedWorkItemStruct firstBackLinkStruct = mock(ILinkedWorkItemStruct.class, RETURNS_DEEP_STUBS);
+        when(firstBackLinkStruct.getLinkRole().getId()).thenReturn("parent");
+        when(firstBackLinkStruct.getLinkedItem().getId()).thenReturn("EL-111");
+        ILinkedWorkItemStruct secondItemLinkStruct = mock(ILinkedWorkItemStruct.class, RETURNS_DEEP_STUBS);
+        lenient().when(secondItemLinkStruct.getLinkRole().getId()).thenReturn("relates_to");
+        when(secondItemLinkStruct.getLinkedItem().getId()).thenReturn("EL-112"); // Note that this is a link to a different item
+        when(backLinkWorkItem.getLinkedWorkItemsStructsDirect()).thenReturn(List.of(firstBackLinkStruct, secondItemLinkStruct));
+        when(workItem.getLinkedWorkItemsBack()).thenReturn(new PObjectListStub<>(List.of(backLinkWorkItem)));
+        assertNull(deleteDummyWorkitemsHook.getExecutor().preAction(workItem));
+
+        // if the role isn't 'parent' we show error
+        when(firstBackLinkStruct.getLinkRole().getId()).thenReturn("duplicates");
+        assertEquals("Cannot delete workitem of type heading 'EL-111' in '/projectGroup2/projectGroup1/testProject1'. " +
+                "You can delete workitem heading only: (a) if it is in Status Draft. (b) if it has no incoming links " +
+                "(apart from links of other headings or has only parent links).", deleteDummyWorkitemsHook.getExecutor().preAction(workItem));
+
+        // same for non-header workitem
         when(workItemType.getId()).thenReturn("requirement");
+        assertEquals("Cannot delete workitem 'EL-111' in '/projectGroup2/projectGroup1/testProject1'. " +
+                        "You can delete workitem only: (a) if it is in Status Draft and never was in any other Status; (b) if it has no incoming links.",
+                deleteDummyWorkitemsHook.getExecutor().preAction(workItem));
+
+        when(workItem.getLinkedWorkItemsBack()).thenReturn(new PObjectListStub<>());
+
         IWorkItem historyItem = mock(IWorkItem.class);
         IStatusOpt historyStatus = mock(IStatusOpt.class);
         when(historyItem.getStatus()).thenReturn(historyStatus);
