@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.3.1](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v3.3.0...v3.3.1) (2025-06-26)
+
+
+### Bug Fixes
+
+* artifacts upload to GitHub release assets ([#31](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/31)) ([d332aaf](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/d332aafbf9dfb72e26163629f0a9688e078f7f41)), closes [#30](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/30)
+* **deps:** update dependency ch.sbb.polarion.extensions:ch.sbb.polarion.extension.interceptor-manager to v4 ([#34](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/34)) ([87172f2](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/87172f2f9a78806bf904a79086a568452bd2a77b))
+* false positive DeleteDummyWorkItemsHook triggering ([#40](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/40)) ([7b432ab](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/7b432ab3144f572b3b04bf9f761acbfdbd3e769c)), closes [#39](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/39)
+
 ## [3.3.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v3.2.0...v3.3.0) (2025-04-25)
 
 
