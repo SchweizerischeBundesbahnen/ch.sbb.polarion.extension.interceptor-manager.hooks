@@ -89,7 +89,7 @@
 
         <!-- Test dependencies -->
         <junit.version>5.13.4</junit.version>
-        <mockito.version>5.19.0</mockito.version>
+        <mockito.version>5.20.0</mockito.version>
         <jackson.version>2.20.0</jackson.version>
 
         <!-- Others -->
