@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.1](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v4.0.0...v4.0.1) (2025-09-29)
+
+
+### Bug Fixes
+
+* enable Maven Central deployment with proper GPG plugin configuration ([629ead0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/629ead0e3730e09a5c24ed983d38bbbfda5696f0)), closes [#51](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/51)
+
 ## [4.0.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v3.3.0...v4.0.0) (2025-07-11)
 
 
