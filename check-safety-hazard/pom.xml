@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>ch.sbb.polarion.extension.interceptor-manager.hooks.check-safety-hazard</artifactId>
+    <name>Check Safety Hazard Hook for Interceptor Manager</name>
 
     <build>
         <plugins>
