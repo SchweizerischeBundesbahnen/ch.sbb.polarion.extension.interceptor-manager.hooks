@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>ch.sbb.polarion.extension.interceptor-manager.hooks.delete-dummy-workitems</artifactId>
+    <name>Delete Dummy Workitems Hook for Interceptor Manager</name>
 
     <build>
         <plugins>
