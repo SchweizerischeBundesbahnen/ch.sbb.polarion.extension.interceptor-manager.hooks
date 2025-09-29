@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>ch.sbb.polarion.extension.interceptor-manager.hooks.inconsistent-test-case-block</artifactId>
+    <name>Inconsistent Test Case Block Hook for Interceptor Manager</name>
 
     <build>
         <plugins>

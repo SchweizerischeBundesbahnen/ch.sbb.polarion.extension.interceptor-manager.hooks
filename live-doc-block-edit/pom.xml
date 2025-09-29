@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>ch.sbb.polarion.extension.interceptor-manager.hooks.live-doc-block-edit</artifactId>
+    <name>Live Doc Block Edit Hook for Interceptor Manager</name>
 
     <build>
         <plugins>
