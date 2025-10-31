@@ -91,7 +91,7 @@
         <!-- Test dependencies -->
         <junit.version>6.0.0</junit.version>
         <mockito.version>5.20.0</mockito.version>
-        <jackson.version>2.20.0</jackson.version>
+        <jackson.version>2.20.1</jackson.version>
 
         <!-- Others -->
         <google.guice.version>7.0.0</google.guice.version>
