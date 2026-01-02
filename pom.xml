@@ -51,7 +51,7 @@
 
     <properties>
         <ch.sbb.polarion.extension.interceptor-manager.version>5.0.0</ch.sbb.polarion.extension.interceptor-manager.version>
-        <ch.sbb.polarion.extension.generic.app.version>11.3.0</ch.sbb.polarion.extension.generic.app.version>
+        <ch.sbb.polarion.extension.generic.app.version>12.1.0</ch.sbb.polarion.extension.generic.app.version>
 
         <interceptor-manager.artifactId>ch.sbb.polarion.extension.interceptor-manager</interceptor-manager.artifactId>
         <hooks.folder.name>hooks</hooks.folder.name>
@@ -69,7 +69,7 @@
         <maven-dependency-plugin.version>3.9.0</maven-dependency-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
-        <sonar-maven-plugin.version>5.4.0.6343</sonar-maven-plugin.version>
+        <sonar-maven-plugin.version>5.5.0.6356</sonar-maven-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>
 
         <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
@@ -90,7 +90,7 @@
 
         <!-- Test dependencies -->
         <junit.version>6.0.1</junit.version>
-        <mockito.version>5.20.0</mockito.version>
+        <mockito.version>5.21.0</mockito.version>
         <jackson.version>2.20.1</jackson.version>
 
         <!-- Others -->
