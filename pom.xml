@@ -95,7 +95,7 @@
 
         <!-- Others -->
         <google.guice.version>7.0.0</google.guice.version>
-        <jetbrains.api.version>24.0.1</jetbrains.api.version>
+        <jetbrains.api.version>24.1.0</jetbrains.api.version>
 
         <!--suppress UnresolvedMavenProperty -->
         <maven-jar-plugin.Hook-Version>${project.artifact.selectedVersion.majorVersion}.${project.artifact.selectedVersion.minorVersion}.${project.artifact.selectedVersion.incrementalVersion}</maven-jar-plugin.Hook-Version>
