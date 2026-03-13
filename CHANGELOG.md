@@ -1,5 +1,17 @@
 # Changelog
 
+## [5.1.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v5.0.0...v5.1.0) (2026-03-13)
+
+
+### Features
+
+* add Guava dependency with version management in pom.xml ([#69](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/69)) ([884458b](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/884458b1e38e10676fee2bf19fb23304b74e3a3a))
+
+
+### Bug Fixes
+
+* **deps:** update dependency ch.sbb.polarion.extensions:ch.sbb.polarion.extension.interceptor-manager to v6.0.1 ([cecaf17](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/cecaf17357d315640bb6460d6f8325da825657c3))
+
 ## [5.0.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v4.0.1...v5.0.0) (2026-01-14)
 
 
