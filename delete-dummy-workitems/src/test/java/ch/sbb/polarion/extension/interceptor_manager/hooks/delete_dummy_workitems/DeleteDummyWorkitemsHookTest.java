@@ -15,6 +15,8 @@ import com.polarion.core.util.logging.Logger;
 import com.polarion.platform.core.IPlatform;
 import com.polarion.platform.core.PlatformContext;
 import com.polarion.platform.persistence.model.IPObjectList;
+import com.polarion.platform.security.ISecurityService;
+import com.polarion.subterra.base.data.identification.IContextId;
 import com.polarion.subterra.base.location.ILocation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,12 +45,15 @@ class DeleteDummyWorkitemsHookTest {
     MockedStatic<HookManifestUtils> hookManifestUtilsMockedStatic;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private ITrackerService trackerService;
+    @Mock
+    private ISecurityService securityService;
 
     @BeforeEach
     void setUp() {
         hookManifestUtilsMockedStatic.when(() -> HookManifestUtils.getHookVersion(any())).thenReturn("1.0.0");
         IPlatform platform = mock(IPlatform.class);
         when(platform.lookupService(ITrackerService.class)).thenReturn(trackerService);
+        when(platform.lookupService(ISecurityService.class)).thenReturn(securityService);
         platformContextMockedStatic.when(PlatformContext::getPlatform).thenReturn(platform);
     }
 
@@ -157,5 +162,141 @@ class DeleteDummyWorkitemsHookTest {
 
         when(historyStatus.getId()).thenReturn("draft");
         assertNull(deleteDummyWorkitemsHook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testBypassGlobalRole() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        DeleteDummyWorkitemsHook hook = createHookWithBypassRoles("admin", "", null);
+
+        when(securityService.getCurrentUser()).thenReturn("alice");
+        // alice has no contextual role in this project
+        lenient().when(securityService.getContextRolesForUser(eq("alice"), nullable(IContextId.class))).thenReturn(List.of());
+
+        // user without bypass role -> hook applies (module is in 'in_process' status)
+        when(securityService.getRolesForUser("alice")).thenReturn(List.of("project_developer"));
+        assertEquals("Cannot delete workitem 'EL-111' in '/testProject1'. The document 'TestModule' is in status 'In process'.",
+                hook.getExecutor().preAction(workItem));
+
+        // user with the configured global bypass role -> hook is skipped
+        when(securityService.getRolesForUser("alice")).thenReturn(List.of("admin"));
+        assertNull(hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testBypassProjectSpecificRole() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // bypass for testProject1 only; global empty; wildcard empty
+        DeleteDummyWorkitemsHook hook = createHookWithBypassRoles("", "", "project_admin");
+
+        when(securityService.getCurrentUser()).thenReturn("alice");
+        // alice has no global roles relevant for the bypass
+        when(securityService.getRolesForUser("alice")).thenReturn(List.of());
+
+        when(securityService.getContextRolesForUser(eq("alice"), nullable(IContextId.class))).thenReturn(List.of("project_admin"));
+        assertNull(hook.getExecutor().preAction(workItem));
+
+        when(securityService.getContextRolesForUser(eq("alice"), nullable(IContextId.class))).thenReturn(List.of("project_developer"));
+        assertEquals("Cannot delete workitem 'EL-111' in '/testProject1'. The document 'TestModule' is in status 'In process'.",
+                hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testBypassProjectRoleScopedToAnotherProject() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // bypass configured for a different project ("otherProject"); must NOT apply to testProject1
+        String settings = baseSettings() + System.lineSeparator() + "bypassProjectRoles.otherProject=project_admin";
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(settings);
+
+        when(securityService.getCurrentUser()).thenReturn("alice");
+
+        // bypass lists resolved for testProject1 are empty -> role lookups must be skipped
+        assertEquals("Cannot delete workitem 'EL-111' in '/testProject1'. The document 'TestModule' is in status 'In process'.",
+                hook.getExecutor().preAction(workItem));
+        verify(securityService, never()).getRolesForUser(anyString());
+        verify(securityService, never()).getContextRolesForUser(anyString(), nullable(IContextId.class));
+    }
+
+    @Test
+    void testBypassProjectRolesWildcard() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // wildcard project bypass (applies to every project)
+        DeleteDummyWorkitemsHook hook = createHookWithBypassRoles("", "project_admin", null);
+
+        when(securityService.getCurrentUser()).thenReturn("alice");
+        when(securityService.getRolesForUser("alice")).thenReturn(List.of());
+        when(securityService.getContextRolesForUser(eq("alice"), nullable(IContextId.class))).thenReturn(List.of("project_admin"));
+
+        assertNull(hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testBypassNoRolesConfigured_roleLookupsSkipped() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // defaults: empty bypassGlobalRoles + empty bypassProjectRoles.* -> role lookups must be skipped
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings());
+
+        when(securityService.getCurrentUser()).thenReturn("alice");
+
+        assertEquals("Cannot delete workitem 'EL-111' in '/testProject1'. The document 'TestModule' is in status 'In process'.",
+                hook.getExecutor().preAction(workItem));
+        verify(securityService, never()).getRolesForUser(anyString());
+        verify(securityService, never()).getContextRolesForUser(anyString(), nullable(IContextId.class));
+    }
+
+    private IWorkItem buildBlockedWorkItem(String projectId) {
+        IProjectGroup projectGroup = mock(IProjectGroup.class);
+        lenient().when(projectGroup.getName()).thenReturn("default");
+        lenient().when(projectGroup.getParentProjectGroup()).thenReturn(null);
+
+        ITrackerProject project = mock(ITrackerProject.class);
+        lenient().when(project.getProjectGroup()).thenReturn(projectGroup);
+        lenient().when(project.getId()).thenReturn(projectId);
+        ILocation location = mock(ILocation.class);
+        lenient().when(location.getLocationPath()).thenReturn("/" + projectId);
+        lenient().when(project.getLocation()).thenReturn(location);
+
+        IWorkItem workItem = mock(IWorkItem.class);
+        lenient().when(workItem.getProject()).thenReturn(project);
+        lenient().when(workItem.getId()).thenReturn("EL-111");
+        ITypeOpt workItemType = mock(ITypeOpt.class);
+        lenient().when(workItemType.getId()).thenReturn("requirement");
+        lenient().when(workItem.getType()).thenReturn(workItemType);
+
+        // module status that would block the deletion if the hook is not bypassed
+        IModule module = mock(IModule.class);
+        IStatusOpt moduleStatus = mock(IStatusOpt.class);
+        lenient().when(moduleStatus.getId()).thenReturn("in_process");
+        lenient().when(moduleStatus.getName()).thenReturn("In process");
+        lenient().when(module.getStatus()).thenReturn(moduleStatus);
+        lenient().when(module.getModuleName()).thenReturn("TestModule");
+        lenient().when(workItem.getModule()).thenReturn(module);
+
+        return workItem;
+    }
+
+    private DeleteDummyWorkitemsHook createHookWithBypassRoles(String globalRoles, String projectWildcardRoles, String projectSpecificRoles) {
+        String settings = baseSettings()
+                .replace("bypassGlobalRoles=", "bypassGlobalRoles=" + globalRoles)
+                .replace("bypassProjectRoles.*=", "bypassProjectRoles.*=" + projectWildcardRoles);
+        if (projectSpecificRoles != null) {
+            settings += System.lineSeparator() + "bypassProjectRoles.testProject1=" + projectSpecificRoles;
+        }
+        return createHookWithSettings(settings);
+    }
+
+    private DeleteDummyWorkitemsHook createHookWithSettings(String settings) {
+        DeleteDummyWorkitemsHook hook = Mockito.spy(DeleteDummyWorkitemsHook.class);
+        hook.setSettings(new HookModel(true, "1.1.0", settings));
+        return hook;
+    }
+
+    private String baseSettings() {
+        return Mockito.spy(DeleteDummyWorkitemsHook.class).getDefaultSettings();
     }
 }
