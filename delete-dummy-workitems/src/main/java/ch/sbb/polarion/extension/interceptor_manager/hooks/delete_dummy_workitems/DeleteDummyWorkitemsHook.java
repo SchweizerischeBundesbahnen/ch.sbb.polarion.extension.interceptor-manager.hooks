@@ -15,10 +15,12 @@ import com.polarion.platform.core.PlatformContext;
 import com.polarion.platform.persistence.IEnumOption;
 import com.polarion.platform.persistence.model.IPObject;
 import com.polarion.platform.persistence.model.IPObjectList;
+import com.polarion.platform.security.ISecurityService;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +55,10 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
             "Upgrading to <b>v3.2.0</b>:" +
             "<ul>" +
             "  <li>introduced two new properties: <b>docDraftStatusIds</b> and <b>workItemDraftStatusIds</b> - use them in case you have custom statuses IDs which must be treated as 'Draft'</li>" +
+            "</ul>" +
+            "Upgrading to <b>v5.1.0</b>:" +
+            "<ul>" +
+            "  <li>introduced two new properties: <b>bypassGlobalRoles</b> and <b>bypassProjectRoles</b> - use them to let users with the listed Polarion roles bypass this hook</li>" +
             "</ul>";
 
     public static final String SETTINGS_PROJECTS_DESCRIPTION = "Comma-separated list of projects. Use * to process all.";
@@ -82,6 +88,12 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     public static final String SETTINGS_WORKITEM_DRAFT_STATUS_IDS_DESCRIPTION = "Comma-separated list of workitem status IDs which will be treated as 'Draft'";
     public static final String SETTINGS_WORKITEM_DRAFT_STATUS_IDS = "workItemDraftStatusIds";
 
+    public static final String SETTINGS_BYPASS_GLOBAL_ROLES_DESCRIPTION = "Comma-separated list of GLOBAL Polarion roles whose users bypass this hook in any project (e.g. admin).";
+    public static final String SETTINGS_BYPASS_GLOBAL_ROLES = "bypassGlobalRoles";
+
+    public static final String SETTINGS_BYPASS_PROJECT_ROLES_DESCRIPTION = "Comma-separated list of CONTEXTUAL (project) Polarion roles whose users bypass this hook for a particular project (e.g. bypassProjectRoles.projectId1=project_admin). Use bypassProjectRoles.* as the default for all projects.";
+    public static final String SETTINGS_BYPASS_PROJECT_ROLES = "bypassProjectRoles";
+
     private static final Logger logger = Logger.getLogger(DeleteDummyWorkitemsHook.class);
     public static final String PLACEHOLDER_WORK_ITEM_ID = "{workItemId}";
     public static final String PLACEHOLDER_PROJECT_LOCATION = "{projectLocation}";
@@ -90,6 +102,7 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     public static final String PLACEHOLDER_DOCUMENT_NAME = "{documentName}";
 
     private final ITrackerService trackerService = PlatformContext.getPlatform().lookupService(ITrackerService.class);
+    private final ISecurityService securityService = PlatformContext.getPlatform().lookupService(ISecurityService.class);
 
     public DeleteDummyWorkitemsHook() {
         super(ItemType.WORKITEM, ActionType.DELETE, DESCRIPTION);
@@ -104,6 +117,10 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
 
         if (!shouldHookBeRun(project, workItem)) {
             return null; // the hook is not applicable for project or workitem type
+        }
+
+        if (currentUserHasBypassRole(project)) {
+            return null; // current user has a role configured to bypass this hook
         }
 
         String projectLocation = project.getLocation().getLocationPath();
@@ -178,6 +195,26 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     @Override
     public @NotNull HookExecutor getExecutor() {
         return this;
+    }
+
+    private boolean currentUserHasBypassRole(@NotNull ITrackerProject project) {
+        String currentUser = securityService.getCurrentUser();
+        if (StringUtils.isEmpty(currentUser)) {
+            return false;
+        }
+
+        List<String> bypassGlobalRoles = new ArrayList<>(getSettingsValueAsList(SETTINGS_BYPASS_GLOBAL_ROLES));
+        List<String> bypassProjectRoles = new ArrayList<>(getSettingsValueAsList(SETTINGS_BYPASS_PROJECT_ROLES, project.getId()));
+        if (bypassGlobalRoles.isEmpty() && bypassProjectRoles.isEmpty()) {
+            return false;
+        }
+
+        Collection<String> globalRoles = securityService.getRolesForUser(currentUser);
+        if (globalRoles.stream().anyMatch(bypassGlobalRoles::contains)) {
+            return true;
+        }
+        Collection<String> projectRoles = securityService.getContextRolesForUser(currentUser, project.getContextId());
+        return projectRoles.stream().anyMatch(bypassProjectRoles::contains);
     }
 
     private boolean shouldHookBeRun(@NotNull ITrackerProject project, @NotNull IWorkItem workItem) {
@@ -303,6 +340,12 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
                         SETTINGS_DOCUMENT_DRAFT_STATUS_IDS, STATUS_DRAFT,
                         SETTINGS_WORKITEM_DRAFT_STATUS_IDS_DESCRIPTION,
                         SETTINGS_WORKITEM_DRAFT_STATUS_IDS, STATUS_DRAFT) +
+                System.lineSeparator() +
+                PropertiesUtils.buildWithDescription(
+                        SETTINGS_BYPASS_GLOBAL_ROLES_DESCRIPTION,
+                        SETTINGS_BYPASS_GLOBAL_ROLES, "",
+                        SETTINGS_BYPASS_PROJECT_ROLES_DESCRIPTION,
+                        SETTINGS_BYPASS_PROJECT_ROLES + DOT + ALL_WILDCARD, "") +
                 System.lineSeparator() +
                 PropertiesUtils.build(
                         SETTINGS_ERROR_STATUS_MSG, "Cannot delete workitem '%s' in '%s'. The document '%s' is in status '%s'.".formatted(PLACEHOLDER_WORK_ITEM_ID, PLACEHOLDER_PROJECT_LOCATION, PLACEHOLDER_DOCUMENT_NAME, PLACEHOLDER_DOCUMENT_STATUS),
