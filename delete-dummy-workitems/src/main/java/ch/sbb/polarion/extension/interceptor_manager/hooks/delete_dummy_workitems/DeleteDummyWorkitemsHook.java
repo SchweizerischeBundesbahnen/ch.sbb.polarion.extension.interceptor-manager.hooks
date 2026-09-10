@@ -81,7 +81,7 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     public static final String SETTINGS_TYPES_DESCRIPTION = "Comma-separated list of workitem types for particular project (e.g.: types.projectId1=task,defect). Use * to wildcard all projects or types (e.g. types.*=*).";
     public static final String SETTINGS_TYPES = "types";
 
-    public static final String SETTINGS_EXCLUDED_TYPES_DESCRIPTION = "Comma-separated list of workitem types to exclude across all or specific projects (e.g.: excludedTypes.projectId1=task,defect). Wildcard * is not supported.";
+    public static final String SETTINGS_EXCLUDED_TYPES_DESCRIPTION = "Comma-separated list of workitem types to exclude across all or specific projects (e.g.: excludedTypes.projectId1=task,defect). Use excludedTypes.* to apply to all projects. Wildcard * as a type value is not supported.";
     public static final String SETTINGS_EXCLUDED_TYPES = "excludedTypes";
 
     /**
