@@ -1,5 +1,19 @@
 # Changelog
 
+## [6.1.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v6.0.1...v6.1.0) (2026-09-10)
+
+
+### Features
+
+* add excludedProjects setting to DeleteDummyWorkitemsHook ([#129](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/129)) ([4e5ab0d](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/4e5ab0df35bf6ea3f27174343d87b4e35405bc36)), closes [#128](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/128)
+
+
+### Bug Fixes
+
+* **deps:** update dependency ch.sbb.polarion.extensions:ch.sbb.polarion.extension.generic.app to v16.1.0 ([#125](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/125)) ([83dad6b](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/83dad6b0af8104365b7ab87f775a9df74eef7ab4))
+* **deps:** update dependency ch.sbb.polarion.extensions:ch.sbb.polarion.extension.interceptor-manager to v7.1.1 ([#105](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/105)) ([8fd5a31](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/8fd5a31e2b634a6eb5acb4a257eb8cc8df94b180))
+* **deps:** update dependency ch.sbb.polarion.extensions:ch.sbb.polarion.extension.interceptor-manager to v7.2.0 ([#121](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/121)) ([3b70d42](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/3b70d42dfe283ac72dfb03b5342755966e851442))
+
 ## [6.0.1](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v6.0.0...v6.0.1) (2026-07-15)
 
 
