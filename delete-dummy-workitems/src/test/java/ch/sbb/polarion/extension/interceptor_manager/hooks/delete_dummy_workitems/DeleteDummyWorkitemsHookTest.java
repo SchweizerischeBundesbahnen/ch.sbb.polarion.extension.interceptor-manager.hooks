@@ -37,6 +37,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class DeleteDummyWorkitemsHookTest {
 
+    private static final String BLOCKED_BY_DOCUMENT_STATUS =
+            "Cannot delete workitem 'EL-111' in '/testProject1'. The document 'TestModule' is in status 'In process'.";
+
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     MockedStatic<PlatformContext> platformContextMockedStatic;
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
@@ -247,6 +250,67 @@ class DeleteDummyWorkitemsHookTest {
                 hook.getExecutor().preAction(workItem));
         verify(securityService, never()).getRolesForUser(anyString());
         verify(securityService, never()).getContextRolesForUser(anyString(), nullable(IContextId.class));
+    }
+
+    @Test
+    void testExcludedProject() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // project is listed in 'projects' (wildcard) but also excluded -> hook is skipped
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings().replace("excludedProjects=", "excludedProjects=testProject1"));
+        assertNull(hook.getExecutor().preAction(workItem));
+
+        // exclusion of another project must not affect this one
+        DeleteDummyWorkitemsHook otherHook = createHookWithSettings(baseSettings().replace("excludedProjects=", "excludedProjects=otherProject"));
+        assertEquals(BLOCKED_BY_DOCUMENT_STATUS, otherHook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testExcludedProjectWinsOverProjectGroup() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // project is pulled in by its project group only, 'projects' is empty
+        String viaProjectGroup = baseSettings()
+                .replace("projectGroups=", "projectGroups=default")
+                .replace("projects=*", "projects=");
+
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(viaProjectGroup);
+        assertEquals(BLOCKED_BY_DOCUMENT_STATUS, hook.getExecutor().preAction(workItem));
+
+        // the exclusion must win over the project group match
+        DeleteDummyWorkitemsHook excludingHook = createHookWithSettings(viaProjectGroup.replace("excludedProjects=", "excludedProjects=testProject1"));
+        assertNull(excludingHook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testExcludedProjectsWildcardIsAnOrdinaryValue() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // '*' must not disable the hook everywhere, it is compared literally
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings().replace("excludedProjects=", "excludedProjects=*"));
+        assertEquals(BLOCKED_BY_DOCUMENT_STATUS, hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testExcludedProjectsMissingInSavedSettings() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1");
+
+        // settings saved before the property was introduced must keep the previous behavior
+        String withoutProperty = baseSettings().replace("excludedProjects=" + System.lineSeparator(), "");
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(withoutProperty);
+        assertEquals(BLOCKED_BY_DOCUMENT_STATUS, hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testExcludedTypes() {
+        IWorkItem workItem = buildBlockedWorkItem("testProject1"); // type 'requirement'
+
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings().replace("excludedTypes.*=", "excludedTypes.*=requirement"));
+        assertNull(hook.getExecutor().preAction(workItem));
+
+        // '*' must not disable the hook everywhere, it is compared literally
+        DeleteDummyWorkitemsHook wildcardHook = createHookWithSettings(baseSettings().replace("excludedTypes.*=", "excludedTypes.*=*"));
+        assertEquals(BLOCKED_BY_DOCUMENT_STATUS, wildcardHook.getExecutor().preAction(workItem));
     }
 
     private IWorkItem buildBlockedWorkItem(String projectId) {
