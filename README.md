@@ -23,7 +23,7 @@ mvn clean package
 Hooks jar files should be copied to `<polarion_home>/polarion/extensions/interceptor-manager/eclipse/plugins/hooks`
 It can be done manually or automated using maven build:
 ```
-mvn clean install -Pinstall-to-local-polarion
+mvn clean install -Plocal-install-into-polarion
 ```
 For automated installation with maven env variable `POLARION_HOME` should be defined and point to folder where Polarion is installed.
 Note: after hooks installation they can be discovered without restart of Polarion by using 'Reload hooks list' on the 'Settings' page of the Interceptor-manager.
