@@ -56,21 +56,39 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
             "<ul>" +
             "  <li>introduced two new properties: <b>docDraftStatusIds</b> and <b>workItemDraftStatusIds</b> - use them in case you have custom statuses IDs which must be treated as 'Draft'</li>" +
             "</ul>" +
+            "Upgrading to <b>v3.3.0</b>:" +
+            "<ul>" +
+            "  <li>introduced new property: <b>excludedTypes</b> - use it to exclude certain workitem types from this hook (e.g. excludedTypes.*=heading)</li>" +
+            "</ul>" +
             "Upgrading to <b>v5.1.0</b>:" +
             "<ul>" +
             "  <li>introduced two new properties: <b>bypassGlobalRoles</b> and <b>bypassProjectRoles</b> - use them to let users with the listed Polarion roles bypass this hook</li>" +
-            "</ul>";
+            "</ul>" +
+            "Upgrading to <b>v6.1.0</b>:" +
+            "<ul>" +
+            "  <li>introduced new property: <b>excludedProjects</b> - use it to exclude certain projects from this hook, even if they are listed in <b>projects</b> or covered by <b>projectGroups</b></li>" +
+            "</ul>" +
+            "<b>Note:</b> saved hook settings are not extended automatically with new properties. Add the missing lines to your configuration manually.";
 
     public static final String SETTINGS_PROJECTS_DESCRIPTION = "Comma-separated list of projects. Use * to process all.";
     public static final String SETTINGS_PROJECTS = "projects";
     public static final String SETTINGS_PROJECT_GROUPS_DESCRIPTION = "Comma-separated list of project groups. All projects under the specified project groups will be processed, even if these projects are not mentioned in '%s' parameter".formatted(SETTINGS_PROJECTS);
     public static final String SETTINGS_PROJECT_GROUPS = "projectGroups";
 
+    public static final String SETTINGS_EXCLUDED_PROJECTS_DESCRIPTION = "Comma-separated list of projects to exclude. Applied even if a project is listed in '%s' or covered by '%s'. Wildcard * is not supported.".formatted(SETTINGS_PROJECTS, SETTINGS_PROJECT_GROUPS);
+    public static final String SETTINGS_EXCLUDED_PROJECTS = "excludedProjects";
+
     public static final String SETTINGS_TYPES_DESCRIPTION = "Comma-separated list of workitem types for particular project (e.g.: types.projectId1=task,defect). Use * to wildcard all projects or types (e.g. types.*=*).";
     public static final String SETTINGS_TYPES = "types";
 
-    public static final String SETTINGS_EXCLUDED_TYPES_DESCRIPTION = "Comma-separated list of workitem types to exclude across all or specific projects (e.g.: types.projectId1=task,defect).";
+    public static final String SETTINGS_EXCLUDED_TYPES_DESCRIPTION = "Comma-separated list of workitem types to exclude across all or specific projects (e.g.: excludedTypes.projectId1=task,defect). Use excludedTypes.* to apply to all projects. Wildcard * as a type value is not supported.";
     public static final String SETTINGS_EXCLUDED_TYPES = "excludedTypes";
+
+    /**
+     * Settings for which '*' is an ordinary value and not a wildcard, otherwise a single '*'
+     * in a negative list would disable the hook completely.
+     */
+    private static final Set<String> NO_WILDCARD_SETTINGS = Set.of(SETTINGS_EXCLUDED_PROJECTS, SETTINGS_EXCLUDED_TYPES);
 
     public static final String SETTINGS_ERROR_STATUS_MSG = "errorStatusMessage";
     public static final String SETTINGS_ERROR_REFERRING_DOC_STATUS_MSG = "errorReferringDocStatusMessage";
@@ -218,6 +236,10 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     }
 
     private boolean shouldHookBeRun(@NotNull ITrackerProject project, @NotNull IWorkItem workItem) {
+        if (isProjectExcluded(project)) {
+            return false; // excluded projects are skipped even if configured in projects or project groups
+        }
+
         boolean projectHasProjectGroupToBeChecked = isProjectInConfiguredProjectGroups(project);
         if (!projectHasProjectGroupToBeChecked) {
             boolean projectFound = findProjectInConfiguredProjects(project);
@@ -250,6 +272,10 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
 
     private boolean findProjectInConfiguredProjects(@NotNull ITrackerProject project) {
         return isCommaSeparatedSettingsHasItem(project.getId(), SETTINGS_PROJECTS);
+    }
+
+    private boolean isProjectExcluded(@NotNull ITrackerProject project) {
+        return isCommaSeparatedSettingsHasItem(project.getId(), SETTINGS_EXCLUDED_PROJECTS);
     }
 
     private boolean isProjectInConfiguredProjectGroups(@NotNull ITrackerProject project) {
@@ -317,7 +343,7 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     @Override
     protected boolean isCommaSeparatedSettingsHasItem(String itemToCheck, @NotNull String settingsId, String... selectors) {
         String itemsString = this.getSettingsValue(settingsId, selectors);
-        return ("*".equals(itemsString) && !SETTINGS_EXCLUDED_TYPES.equals(settingsId)) ||
+        return (ALL_WILDCARD.equals(itemsString) && !NO_WILDCARD_SETTINGS.contains(settingsId)) ||
                 Stream.of(itemsString.split(","))
                         .map(String::trim)
                         .anyMatch(s -> Objects.equals(s, itemToCheck));
@@ -330,6 +356,8 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
                 SETTINGS_PROJECT_GROUPS, "",
                 SETTINGS_PROJECTS_DESCRIPTION,
                 SETTINGS_PROJECTS, ALL_WILDCARD,
+                SETTINGS_EXCLUDED_PROJECTS_DESCRIPTION,
+                SETTINGS_EXCLUDED_PROJECTS, "",
                 SETTINGS_TYPES_DESCRIPTION,
                 SETTINGS_TYPES + DOT + ALL_WILDCARD, ALL_WILDCARD,
                 SETTINGS_EXCLUDED_TYPES_DESCRIPTION,
