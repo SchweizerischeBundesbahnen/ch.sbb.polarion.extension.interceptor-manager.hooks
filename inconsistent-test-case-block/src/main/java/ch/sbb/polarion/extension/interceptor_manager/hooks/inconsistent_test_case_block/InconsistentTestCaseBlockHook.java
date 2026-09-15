@@ -2,6 +2,7 @@ package ch.sbb.polarion.extension.interceptor_manager.hooks.inconsistent_test_ca
 
 import ch.sbb.polarion.extension.interceptor_manager.model.ActionHook;
 import ch.sbb.polarion.extension.interceptor_manager.model.HookExecutor;
+import ch.sbb.polarion.extension.interceptor_manager.model.RequireSettingEntries;
 import ch.sbb.polarion.extension.interceptor_manager.util.PropertiesUtils;
 import com.polarion.alm.tracker.model.ITestRecord;
 import com.polarion.alm.tracker.model.ITestRun;
@@ -17,7 +18,7 @@ import java.util.List;
  * Checks for consistency of Test Case Result and Test Step result(s).
  */
 @SuppressWarnings("unused")
-public class InconsistentTestCaseBlockHook extends ActionHook implements HookExecutor {
+public class InconsistentTestCaseBlockHook extends ActionHook implements HookExecutor, RequireSettingEntries {
 
     public static final String DESCRIPTION = "Checks for consistency of Test Case Result and Test Step result(s).<br>" +
             "Does not allow saving the Test Case result (execution) if the Test Case has passed, but any step has a prohibited result.";
@@ -89,6 +90,18 @@ public class InconsistentTestCaseBlockHook extends ActionHook implements HookExe
         return testRun.getType() != null && isCommaSeparatedSettingsHasItem(testRun.getType().getId(), SETTINGS_TYPES, testRun.getProjectId());
     }
 
+    /**
+     * Every entry this hook reads. The interceptor manager refuses settings which miss one of them, so the
+     * values written before an entry existed can not stay in use unnoticed.
+     */
+    @Override
+    public @NotNull List<String> getRequiredSettingEntryNames() {
+        return List.of(
+                SETTINGS_PROJECTS,
+                SETTINGS_TYPES + DOT + ALL_WILDCARD,
+                SETTINGS_PROHIBITED_RESULTS + DOT + ALL_WILDCARD,
+                SETTINGS_ERROR_MSG);
+    }
 
     @Override
     public String getDefaultSettings() {

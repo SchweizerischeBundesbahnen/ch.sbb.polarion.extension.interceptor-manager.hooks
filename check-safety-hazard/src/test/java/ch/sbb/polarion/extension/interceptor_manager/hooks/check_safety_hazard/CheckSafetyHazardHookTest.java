@@ -2,6 +2,7 @@ package ch.sbb.polarion.extension.interceptor_manager.hooks.check_safety_hazard;
 
 import ch.sbb.polarion.extension.interceptor_manager.settings.HookModel;
 import ch.sbb.polarion.extension.interceptor_manager.util.HookManifestUtils;
+import ch.sbb.polarion.extension.interceptor_manager.util.SettingEntriesValidator;
 import com.polarion.alm.tracker.model.ITypeOpt;
 import com.polarion.alm.tracker.model.IWorkItem;
 import com.polarion.core.util.logging.Logger;
@@ -18,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
+
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 class CheckSafetyHazardHookTest {
@@ -263,5 +266,15 @@ class CheckSafetyHazardHookTest {
         HookModel hookModel = new HookModel(true, "1.1.0", defaultSettings);
         checkSafetyHazardHook.setSettings(hookModel);
         return checkSafetyHazardHook;
+    }
+
+    @Test
+    void defaultSettingsContainEveryRequiredEntry() {
+        // The default settings are what an administrator starts from, so a required entry missing from them
+        // would make a fresh hook unsavable. This fails the moment a new entry is declared but not defaulted.
+        CheckSafetyHazardHook hook = new CheckSafetyHazardHook();
+        HookModel defaults = new HookModel(true, "1.0.0", hook.getDefaultSettings());
+
+        assertEquals(List.of(), SettingEntriesValidator.validateForSave(hook, defaults));
     }
 }

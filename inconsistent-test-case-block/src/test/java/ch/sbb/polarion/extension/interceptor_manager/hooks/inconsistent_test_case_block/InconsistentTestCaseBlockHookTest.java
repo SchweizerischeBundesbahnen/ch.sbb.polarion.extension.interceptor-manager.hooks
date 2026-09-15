@@ -2,6 +2,7 @@ package ch.sbb.polarion.extension.interceptor_manager.hooks.inconsistent_test_ca
 
 import ch.sbb.polarion.extension.interceptor_manager.settings.HookModel;
 import ch.sbb.polarion.extension.interceptor_manager.util.HookManifestUtils;
+import ch.sbb.polarion.extension.interceptor_manager.util.SettingEntriesValidator;
 import com.polarion.alm.tracker.model.ITestRecord;
 import com.polarion.alm.tracker.model.ITestRun;
 import com.polarion.alm.tracker.model.ITestStepResult;
@@ -132,5 +133,15 @@ class InconsistentTestCaseBlockHookTest {
         HookModel hookModel = new HookModel(true, "1.1.0", defaultSettings);
         inconsistentTestCaseBlockHook.setSettings(hookModel);
         return inconsistentTestCaseBlockHook;
+    }
+
+    @Test
+    void defaultSettingsContainEveryRequiredEntry() {
+        // The default settings are what an administrator starts from, so a required entry missing from them
+        // would make a fresh hook unsavable. This fails the moment a new entry is declared but not defaulted.
+        InconsistentTestCaseBlockHook hook = new InconsistentTestCaseBlockHook();
+        HookModel defaults = new HookModel(true, "1.0.0", hook.getDefaultSettings());
+
+        assertEquals(List.of(), SettingEntriesValidator.validateForSave(hook, defaults));
     }
 }

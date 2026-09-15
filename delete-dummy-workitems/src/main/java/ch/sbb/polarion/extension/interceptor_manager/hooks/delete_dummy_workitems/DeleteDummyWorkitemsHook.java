@@ -2,6 +2,7 @@ package ch.sbb.polarion.extension.interceptor_manager.hooks.delete_dummy_workite
 
 import ch.sbb.polarion.extension.interceptor_manager.model.ActionHook;
 import ch.sbb.polarion.extension.interceptor_manager.model.HookExecutor;
+import ch.sbb.polarion.extension.interceptor_manager.model.RequireSettingEntries;
 import ch.sbb.polarion.extension.interceptor_manager.util.PropertiesUtils;
 import com.polarion.alm.projects.model.IProjectGroup;
 import com.polarion.alm.tracker.ITrackerService;
@@ -32,7 +33,7 @@ import java.util.stream.Stream;
  * Hook which prevents documents deletion under some circumstances
  */
 @SuppressWarnings({"unused", "java:S2160"}) // ignore missing 'equals()' - it is made by design
-public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor {
+public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor, RequireSettingEntries {
 
     public static final String DESCRIPTION = "User can NOT delete workitems IF:<br>" +
             "<ul>" +
@@ -347,6 +348,28 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
                 Stream.of(itemsString.split(","))
                         .map(String::trim)
                         .anyMatch(s -> Objects.equals(s, itemToCheck));
+    }
+
+    /**
+     * Every entry this hook reads. The interceptor manager refuses settings which miss one of them, so the
+     * values written before an entry existed can not stay in use unnoticed.
+     */
+    @Override
+    public @NotNull List<String> getRequiredSettingEntryNames() {
+        return List.of(
+                SETTINGS_PROJECT_GROUPS,
+                SETTINGS_PROJECTS,
+                SETTINGS_EXCLUDED_PROJECTS,
+                SETTINGS_TYPES + DOT + ALL_WILDCARD,
+                SETTINGS_EXCLUDED_TYPES + DOT + ALL_WILDCARD,
+                SETTINGS_DOCUMENT_DRAFT_STATUS_IDS,
+                SETTINGS_WORKITEM_DRAFT_STATUS_IDS,
+                SETTINGS_BYPASS_GLOBAL_ROLES,
+                SETTINGS_BYPASS_PROJECT_ROLES + DOT + ALL_WILDCARD,
+                SETTINGS_ERROR_STATUS_MSG,
+                SETTINGS_ERROR_REFERRING_DOC_STATUS_MSG,
+                SETTINGS_ERROR_LINKED_MSG,
+                SETTINGS_ERROR_HEADING_TYPE_LINKED_MSG);
     }
 
     @Override

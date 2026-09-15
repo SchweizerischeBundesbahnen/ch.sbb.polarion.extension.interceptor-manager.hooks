@@ -3,6 +3,7 @@ package ch.sbb.polarion.extension.interceptor_manager.hooks.live_doc_block_edit;
 import ch.sbb.polarion.extension.generic.util.PObjectListStub;
 import ch.sbb.polarion.extension.interceptor_manager.settings.HookModel;
 import ch.sbb.polarion.extension.interceptor_manager.util.HookManifestUtils;
+import ch.sbb.polarion.extension.interceptor_manager.util.SettingEntriesValidator;
 import com.polarion.alm.tracker.model.IModule;
 import com.polarion.alm.tracker.model.ITrackerProject;
 import com.polarion.alm.tracker.model.ITypeOpt;
@@ -19,6 +20,9 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
@@ -74,5 +78,15 @@ class LiveDocBlockEditHookTest {
 
         String errorMessage = liveDocBlockEditHook.getExecutor().preAction(module);
         assertNull(errorMessage);
+    }
+
+    @Test
+    void defaultSettingsContainEveryRequiredEntry() {
+        // The default settings are what an administrator starts from, so a required entry missing from them
+        // would make a fresh hook unsavable. This fails the moment a new entry is declared but not defaulted.
+        LiveDocBlockEditHook hook = new LiveDocBlockEditHook();
+        HookModel defaults = new HookModel(true, "1.0.0", hook.getDefaultSettings());
+
+        assertEquals(List.of(), SettingEntriesValidator.validateForSave(hook, defaults));
     }
 }
