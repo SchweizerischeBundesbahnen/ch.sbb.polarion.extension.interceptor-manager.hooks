@@ -2,6 +2,7 @@ package ch.sbb.polarion.extension.interceptor_manager.hooks.live_doc_block_edit;
 
 import ch.sbb.polarion.extension.interceptor_manager.model.ActionHook;
 import ch.sbb.polarion.extension.interceptor_manager.model.HookExecutor;
+import ch.sbb.polarion.extension.interceptor_manager.model.RequireSettingEntries;
 import ch.sbb.polarion.extension.interceptor_manager.util.PropertiesUtils;
 import com.polarion.alm.tracker.model.IModule;
 import com.polarion.alm.tracker.model.ITrackerProject;
@@ -11,11 +12,13 @@ import com.polarion.platform.persistence.model.IPObjectList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Hook which prevents documents modification
  */
 @SuppressWarnings("unused")
-public class LiveDocBlockEditHook extends ActionHook implements HookExecutor {
+public class LiveDocBlockEditHook extends ActionHook implements HookExecutor, RequireSettingEntries {
 
     public static final String DESCRIPTION = "Prevents documents modification for specific projects.";
 
@@ -94,6 +97,18 @@ public class LiveDocBlockEditHook extends ActionHook implements HookExecutor {
 
     private boolean findProjectInConfiguredProjects(@NotNull ITrackerProject project) {
         return isCommaSeparatedSettingsHasItem(project.getId(), SETTINGS_PROJECTS);
+    }
+
+    /**
+     * Every entry this hook reads. The interceptor manager refuses settings which miss one of them, so the
+     * values written before an entry existed can not stay in use unnoticed.
+     */
+    @Override
+    public @NotNull List<String> getRequiredSettingEntryNames() {
+        return List.of(
+                SETTINGS_PROJECTS,
+                SETTINGS_TYPES + DOT + ALL_WILDCARD,
+                SETTINGS_ERROR_MSG);
     }
 
     @Override

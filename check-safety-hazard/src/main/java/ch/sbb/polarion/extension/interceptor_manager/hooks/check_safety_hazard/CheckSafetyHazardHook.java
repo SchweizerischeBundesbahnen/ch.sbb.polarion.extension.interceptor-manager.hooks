@@ -2,6 +2,7 @@ package ch.sbb.polarion.extension.interceptor_manager.hooks.check_safety_hazard;
 
 import ch.sbb.polarion.extension.interceptor_manager.model.ActionHook;
 import ch.sbb.polarion.extension.interceptor_manager.model.HookExecutor;
+import ch.sbb.polarion.extension.interceptor_manager.model.RequireSettingEntries;
 import ch.sbb.polarion.extension.interceptor_manager.util.PropertiesUtils;
 import com.polarion.alm.tracker.model.IWorkItem;
 import com.polarion.core.util.StringUtils;
@@ -21,7 +22,7 @@ import java.util.stream.Collectors;
  * WorkItems hazard check.
  */
 @SuppressWarnings("unused")
-public class CheckSafetyHazardHook extends ActionHook implements HookExecutor {
+public class CheckSafetyHazardHook extends ActionHook implements HookExecutor, RequireSettingEntries {
 
     public static final String DESCRIPTION = "Hook for safetyHazardRH workitems.";
 
@@ -169,6 +170,24 @@ public class CheckSafetyHazardHook extends ActionHook implements HookExecutor {
     private String getEnumIdFromCustomField(IWorkItem workItem, String customFieldId) {
         Object customFieldValue = workItem.getCustomField(customFieldId);
         return customFieldValue instanceof IEnumOption enumOption ? enumOption.getId() : null;
+    }
+
+    /**
+     * Every entry this hook reads. The interceptor manager refuses settings which miss one of them, so the
+     * values written before an entry existed can not stay in use unnoticed.
+     */
+    @Override
+    public @NotNull List<String> getRequiredSettingEntryNames() {
+        return List.of(
+                SETTINGS_PROJECTS,
+                SETTINGS_TYPES + DOT + ALL_WILDCARD,
+                SETTINGS_FIELD_ID_BROADLY_ACCEPTED,
+                SETTINGS_FIELD_ID_RISK_ACCEPTANCE,
+                SETTINGS_FIELD_ID_BENCHMARK_RAC,
+                SETTINGS_FIELD_ID_RISK_EVALUATION,
+                SETTINGS_MSG_INAPPLICABLE,
+                SETTINGS_MSG_FILL_FIELDS_PREFIX,
+                SETTINGS_MSG_FILL_FIELDS_DELIMITER);
     }
 
     @Override
