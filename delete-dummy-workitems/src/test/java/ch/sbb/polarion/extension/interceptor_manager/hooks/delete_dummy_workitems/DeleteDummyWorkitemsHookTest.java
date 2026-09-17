@@ -15,6 +15,7 @@ import com.polarion.alm.tracker.model.IWorkItem;
 import com.polarion.core.util.logging.Logger;
 import com.polarion.platform.core.IPlatform;
 import com.polarion.platform.core.PlatformContext;
+import com.polarion.platform.persistence.UnresolvableObjectException;
 import com.polarion.platform.persistence.model.IPObjectList;
 import com.polarion.platform.security.ISecurityService;
 import com.polarion.subterra.base.data.identification.IContextId;
@@ -312,6 +313,119 @@ class DeleteDummyWorkitemsHookTest {
         // '*' must not disable the hook everywhere, it is compared literally
         DeleteDummyWorkitemsHook wildcardHook = createHookWithSettings(baseSettings().replace("excludedTypes.*=", "excludedTypes.*=*"));
         assertEquals(BLOCKED_BY_DOCUMENT_STATUS, wildcardHook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testUnresolvableBackLinkDoesNotHideTheRemainingLinks() {
+        IWorkItem workItem = buildDeletableWorkItem();
+
+        // a back link Polarion can not resolve: every call on it throws
+        IWorkItem unresolvableBackLink = mock(IWorkItem.class);
+        when(unresolvableBackLink.isUnresolvable()).thenReturn(true);
+        lenient().when(unresolvableBackLink.getLinkedWorkItemsStructsDirect())
+                .thenThrow(new UnresolvableObjectException("uri: subterra:data-service:objects:/default/testProject1${WorkItem}EL-999"));
+
+        // a real incoming link which must still block the deletion
+        ILinkedWorkItemStruct blockingStruct = mock(ILinkedWorkItemStruct.class, RETURNS_DEEP_STUBS);
+        when(blockingStruct.getLinkRole().getId()).thenReturn("relates_to");
+        when(blockingStruct.getLinkedItem().getId()).thenReturn("EL-111");
+        IWorkItem resolvableBackLink = mock(IWorkItem.class);
+        when(resolvableBackLink.getLinkedWorkItemsStructsDirect()).thenReturn(List.of(blockingStruct));
+
+        when(workItem.getLinkedWorkItemsBack()).thenReturn(new PObjectListStub<>(List.of(unresolvableBackLink, resolvableBackLink)));
+
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings());
+        assertEquals("Cannot delete workitem 'EL-111' in '/testProject1'. You can delete workitem only: " +
+                        "(a) if it is in Status Draft and never was in any other Status; (b) if it has no incoming links.",
+                hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testUnresolvableBackLinkAloneDoesNotBlockDeletion() {
+        IWorkItem workItem = buildDeletableWorkItem();
+
+        IWorkItem unresolvableBackLink = mock(IWorkItem.class);
+        when(unresolvableBackLink.isUnresolvable()).thenReturn(true);
+        when(workItem.getLinkedWorkItemsBack()).thenReturn(new PObjectListStub<>(List.of(unresolvableBackLink)));
+
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings());
+        assertNull(hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testUnresolvableReferringDocumentDoesNotHideTheRemainingDocuments() {
+        IWorkItem workItem = buildDeletableWorkItem();
+
+        IModule unresolvableModule = mock(IModule.class);
+        when(unresolvableModule.isUnresolvable()).thenReturn(true);
+        lenient().when(unresolvableModule.getStatus())
+                .thenThrow(new UnresolvableObjectException("uri: subterra:data-service:objects:/default/testProject1${Module}Doc"));
+
+        // a real referring document which must still block the deletion
+        IModule blockingModule = mock(IModule.class);
+        IStatusOpt blockingModuleStatus = mock(IStatusOpt.class);
+        when(blockingModuleStatus.getId()).thenReturn("completed");
+        when(blockingModuleStatus.getName()).thenReturn("Completed");
+        when(blockingModule.getStatus()).thenReturn(blockingModuleStatus);
+        when(blockingModule.getModuleName()).thenReturn("ExternalLinkedModule");
+
+        when(workItem.getExternalLinkingModules()).thenReturn(new PObjectListStub<>(List.of(unresolvableModule, blockingModule)));
+
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings());
+        assertEquals("Cannot delete workitem 'EL-111' in '/testProject1'. " +
+                        "The referring document 'ExternalLinkedModule' is in status 'Completed'.",
+                hook.getExecutor().preAction(workItem));
+    }
+
+    @Test
+    void testUnexpectedErrorIsLoggedAndTheDeletionIsAllowed() {
+        IWorkItem workItem = buildDeletableWorkItem();
+
+        // an error the hook does not expect, for example a link list which can not be read at all
+        when(workItem.getLinkedWorkItemsBack())
+                .thenThrow(new UnresolvableObjectException("uri: subterra:data-service:objects:/default/testProject1${WorkItem}EL-999"));
+
+        // the hook logs the error and lets the action pass, it never propagates the exception to the caller
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings());
+        assertNull(hook.getExecutor().preAction(workItem));
+    }
+
+    /**
+     * A workitem which passes every check: draft document, draft status, no history, no links.
+     */
+    private IWorkItem buildDeletableWorkItem() {
+        IProjectGroup projectGroup = mock(IProjectGroup.class);
+        lenient().when(projectGroup.getName()).thenReturn("default");
+        lenient().when(projectGroup.getParentProjectGroup()).thenReturn(null);
+
+        ITrackerProject project = mock(ITrackerProject.class);
+        lenient().when(project.getProjectGroup()).thenReturn(projectGroup);
+        lenient().when(project.getId()).thenReturn("testProject1");
+        ILocation location = mock(ILocation.class);
+        lenient().when(location.getLocationPath()).thenReturn("/testProject1");
+        lenient().when(project.getLocation()).thenReturn(location);
+
+        IWorkItem workItem = mock(IWorkItem.class);
+        lenient().when(workItem.getProject()).thenReturn(project);
+        lenient().when(workItem.getId()).thenReturn("EL-111");
+        ITypeOpt workItemType = mock(ITypeOpt.class);
+        lenient().when(workItemType.getId()).thenReturn("requirement");
+        lenient().when(workItem.getType()).thenReturn(workItemType);
+        IStatusOpt workItemStatus = mock(IStatusOpt.class);
+        lenient().when(workItemStatus.getId()).thenReturn("draft");
+        lenient().when(workItem.getStatus()).thenReturn(workItemStatus);
+
+        IModule module = mock(IModule.class);
+        IStatusOpt moduleStatus = mock(IStatusOpt.class);
+        lenient().when(moduleStatus.getId()).thenReturn("draft");
+        lenient().when(module.getStatus()).thenReturn(moduleStatus);
+        lenient().when(workItem.getModule()).thenReturn(module);
+
+        lenient().when(workItem.getExternalLinkingModules()).thenReturn(new PObjectListStub<IModule>());
+        lenient().when(workItem.getLinkedWorkItemsBack()).thenReturn(new PObjectListStub<>());
+        lenient().when(trackerService.getProjectsService().getDataService().getObjectHistory(workItem)).thenReturn(new PObjectListStub<>());
+
+        return workItem;
     }
 
     private IWorkItem buildBlockedWorkItem(String projectId) {
