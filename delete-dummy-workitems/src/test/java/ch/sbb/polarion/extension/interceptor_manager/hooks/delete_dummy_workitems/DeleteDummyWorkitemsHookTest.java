@@ -377,6 +377,19 @@ class DeleteDummyWorkitemsHookTest {
                 hook.getExecutor().preAction(workItem));
     }
 
+    @Test
+    void testUnexpectedErrorIsLoggedAndTheDeletionIsAllowed() {
+        IWorkItem workItem = buildDeletableWorkItem();
+
+        // an error the hook does not expect, for example a link list which can not be read at all
+        when(workItem.getLinkedWorkItemsBack())
+                .thenThrow(new UnresolvableObjectException("uri: subterra:data-service:objects:/default/testProject1${WorkItem}EL-999"));
+
+        // the hook logs the error and lets the action pass, it never propagates the exception to the caller
+        DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings());
+        assertNull(hook.getExecutor().preAction(workItem));
+    }
+
     /**
      * A workitem which passes every check: draft document, draft status, no history, no links.
      */
