@@ -161,7 +161,7 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
         } catch (ValidationError validationError) {
             return validationError.getMessage();
         } catch (Exception e) {
-            logger.error("Error during hook processing", e);
+            logger.error("Error during hook processing of workitem '%s' in '%s'".formatted(workItemId, projectLocation), e);
         }
         return null;
     }
@@ -184,6 +184,9 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     private void validateLinkedDocumentStatuses(@NotNull IWorkItem workItem, String workItemId, String projectLocation) throws ValidationError {
         for (Object externalModule : workItem.getExternalLinkingModules()) {
             if (externalModule instanceof IModule externalLinkingModule) {
+                if (externalLinkingModule.isUnresolvable()) {
+                    continue;
+                }
                 @Nullable IStatusOpt externalLinkingModuleStatus = externalLinkingModule.getStatus();
                 if (externalLinkingModuleStatus != null && isDocumentNotInDraftStatus(externalLinkingModuleStatus.getId())) {
                     throw new ValidationError(getSettingsValue(SETTINGS_ERROR_REFERRING_DOC_STATUS_MSG), workItemId, projectLocation, null, externalLinkingModuleStatus.getName(), externalLinkingModule.getModuleName());
@@ -324,6 +327,9 @@ public class DeleteDummyWorkitemsHook extends ActionHook implements HookExecutor
     private @NotNull Set<String> getWorkItemIncomingLinkRoles(@NotNull IPObjectList<IWorkItem> backLinkedWorkItems, @NotNull String currentWorkItemId) {
         Set<String> incomingLinkRoleIds = new HashSet<>();
         for (IWorkItem backLinkedWorkItem : backLinkedWorkItems) {
+            if (backLinkedWorkItem.isUnresolvable()) {
+                continue;
+            }
             backLinkedWorkItem.getLinkedWorkItemsStructsDirect().stream()
                     .filter(s -> s.getLinkedItem().getId().equals(currentWorkItemId))
                     .forEach(linkedWorkItemStruct -> incomingLinkRoleIds.add(linkedWorkItemStruct.getLinkRole().getId()));
