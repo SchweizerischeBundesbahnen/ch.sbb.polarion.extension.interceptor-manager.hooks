@@ -1,5 +1,13 @@
 # Changelog
 
+## [6.1.1](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v6.1.0...v6.1.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* **deps:** update dependency org.sonarsource.scanner.maven:sonar-maven-plugin to v5.8.0.7211 ([#139](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/139)) ([2ad840f](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/2ad840f524b81202dbd1adbcc61c79de09aa091d))
+* skip unresolvable linked objects in DeleteDummyWorkitemsHook ([#136](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/136)) ([da02fb1](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/da02fb1c2afd857de2cd880e4c8488fd3074ce94)), closes [#135](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/135)
+
 ## [6.1.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v6.0.1...v6.1.0) (2026-09-15)
 
 
