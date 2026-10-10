@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.1.1](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v6.1.0...v6.1.1) (2026-10-10)
+
+
+### Bug Fixes
+
+* **deps:** update dependency ch.sbb.polarion.extensions:ch.sbb.polarion.extension.generic.app to v16.2.0 ([#144](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/144)) ([2b723dc](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/2b723dc9b9ae078239b1504f91ebb537feeeef4b))
+* **deps:** update dependency org.sonarsource.scanner.maven:sonar-maven-plugin to v5.8.0.7211 ([#139](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/139)) ([2ad840f](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/2ad840f524b81202dbd1adbcc61c79de09aa091d))
+* **deps:** update mockito monorepo to v5.24.0 ([#143](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/143)) ([47a1616](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/47a1616e0f87711ce3273fc3e983a212a2d63e0a))
+* skip unresolvable linked objects in DeleteDummyWorkitemsHook ([#136](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/136)) ([da02fb1](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/commit/da02fb1c2afd857de2cd880e4c8488fd3074ce94)), closes [#135](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/issues/135)
+
 ## [6.1.0](https://github.com/SchweizerischeBundesbahnen/ch.sbb.polarion.extension.interceptor-manager.hooks/compare/v6.0.1...v6.1.0) (2026-09-15)
 
 
