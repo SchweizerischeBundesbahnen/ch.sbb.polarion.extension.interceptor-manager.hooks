@@ -94,7 +94,7 @@
         <jackson.version>2.22.4</jackson.version>
 
         <!-- Others -->
-        <google.guava.version>33.4.8-jre</google.guava.version>
+        <google.guava.version>33.7.2-jre</google.guava.version>
         <google.guice.version>7.0.0</google.guice.version>
         <jetbrains.api.version>24.0.1</jetbrains.api.version>
 
