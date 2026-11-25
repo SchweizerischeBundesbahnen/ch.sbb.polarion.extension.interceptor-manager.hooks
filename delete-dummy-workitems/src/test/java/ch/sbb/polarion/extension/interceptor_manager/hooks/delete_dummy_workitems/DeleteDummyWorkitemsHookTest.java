@@ -29,6 +29,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -130,7 +131,7 @@ class DeleteDummyWorkitemsHookTest {
 
         when(workItemStatus.getId()).thenReturn("draft");
 
-        // there is backlink but ut has 'parent' role - we allow deletion in this case
+        // there is backlink but it has 'parent' role - we allow deletion in this case
         IWorkItem backLinkWorkItem = mock(IWorkItem.class);
         ILinkedWorkItemStruct firstBackLinkStruct = mock(ILinkedWorkItemStruct.class, RETURNS_DEEP_STUBS);
         when(firstBackLinkStruct.getLinkRole().getId()).thenReturn("parent");
@@ -378,16 +379,27 @@ class DeleteDummyWorkitemsHookTest {
     }
 
     @Test
-    void testUnexpectedErrorIsLoggedAndTheDeletionIsAllowed() {
+    void testUnexpectedErrorIsLoggedAndTheDeletionIsAllowed() throws ReflectiveOperationException {
         IWorkItem workItem = buildDeletableWorkItem();
 
         // an error the hook does not expect, for example a link list which can not be read at all
-        when(workItem.getLinkedWorkItemsBack())
-                .thenThrow(new UnresolvableObjectException("uri: subterra:data-service:objects:/default/testProject1${WorkItem}EL-999"));
+        UnresolvableObjectException unexpected = new UnresolvableObjectException("uri: subterra:data-service:objects:/default/testProject1${WorkItem}EL-999");
+        when(workItem.getLinkedWorkItemsBack()).thenThrow(unexpected);
 
         // the hook logs the error and lets the action pass, it never propagates the exception to the caller
         DeleteDummyWorkitemsHook hook = createHookWithSettings(baseSettings());
         assertNull(hook.getExecutor().preAction(workItem));
+        verify(hookLogger()).error("Error during hook processing of workitem 'EL-111' in '/testProject1'", unexpected);
+    }
+
+    /**
+     * The hook's static logger. It was created by {@code Logger.getLogger} under the static mock of whichever test
+     * loaded the class first, so it is a mock shared by all tests: verify only calls that are unique to one test.
+     */
+    private static Logger hookLogger() throws ReflectiveOperationException {
+        Field field = DeleteDummyWorkitemsHook.class.getDeclaredField("logger");
+        field.setAccessible(true);
+        return (Logger) field.get(null);
     }
 
     /**
